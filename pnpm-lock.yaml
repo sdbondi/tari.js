@@ -19,8 +19,8 @@ catalogs:
       specifier: ^1.52.0
       version: 1.52.0
     '@tari-project/ootle-wasm':
-      specifier: ^0.39.0
-      version: 0.39.0
+      specifier: ^0.41.0
+      version: 0.41.0
     '@tari-project/wallet_jrpc_client':
       specifier: ^1.22.0
       version: 1.22.0
@@ -263,7 +263,7 @@ importers:
         version: 1.52.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.39.0
+        version: 0.41.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -297,7 +297,7 @@ importers:
         version: 1.52.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.39.0
+        version: 0.41.0
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -383,7 +383,7 @@ importers:
         version: 1.52.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.39.0
+        version: 0.41.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -457,7 +457,7 @@ importers:
         version: 1.52.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.39.0
+        version: 0.41.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -2069,8 +2069,8 @@ packages:
   '@tari-project/ootle-ts-bindings@1.52.0':
     resolution: {integrity: sha512-we2egABTljCemxlQoZg2vtG7qOeyW++HFz/0KtvIc9m8mHnnvnV+QpQ9r7BFbZpe5iTU+gXvNBbOmre3AT+J2g==}
 
-  '@tari-project/ootle-wasm@0.39.0':
-    resolution: {integrity: sha512-/j8VmKUeJg+D2KvrVqoqklcKjzlnCcDGCChUDUpE62CjgJjI0ixHj4trxxDrCsM+wUL217aPjB8QQyfrFfL88Q==}
+  '@tari-project/ootle-wasm@0.41.0':
+    resolution: {integrity: sha512-PajpMywrHV8QEr4WwfT1LQcnsNDs/CADZbk9pNovb2xdACjeIXDs3dQuWwUEJKYupMMHW5GU4YyKo2tfvAQoCw==}
 
   '@tari-project/wallet_jrpc_client@1.22.0':
     resolution: {integrity: sha512-nNPeX2Zhu/8wxAhNdgJkHHBIehWoZB8dN3/OyY6asCzNDEtauVYhm+3bD2rOgBzYSOOrL3Su9ojxeWVizftL2Q==}
@@ -5523,7 +5523,7 @@ snapshots:
     dependencies:
       bech32: 2.0.0
 
-  '@tari-project/ootle-wasm@0.39.0': {}
+  '@tari-project/ootle-wasm@0.41.0': {}
 
   '@tari-project/wallet_jrpc_client@1.22.0':
     dependencies:
