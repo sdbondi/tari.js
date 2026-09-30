@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { TemplateMeta } from "@tari-project/ootle-indexer";
+import type { WatchedTemplateItem } from "@tari-project/ootle-indexer";
 import { IndexerClient } from "@tari-project/ootle-indexer";
 import { defaultIndexerUrl, Network } from "@tari-project/ootle";
 
@@ -11,7 +11,7 @@ export interface UseTemplates {
   indexerUrl: string;
   setIndexerUrl: (url: string) => void;
   loadStatus: LoadStatus;
-  templates: TemplateMeta[];
+  templates: WatchedTemplateItem[];
   loadError: string | null;
   reload: () => Promise<void>;
 
@@ -23,7 +23,7 @@ export interface UseTemplates {
 }
 
 /**
- * Loads the list of templates cached by the indexer and fetches individual
+ * Loads the list of templates the indexer watches and fetches individual
  * template definitions (ABIs) on demand.
  *
  * Uses `IndexerClient` directly rather than `IndexerProvider` because the
@@ -32,7 +32,7 @@ export interface UseTemplates {
 export function useTemplates(): UseTemplates {
   const [indexerUrl, setIndexerUrl] = useState(ESME_INDEXER);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
-  const [templates, setTemplates] = useState<TemplateMeta[]>([]);
+  const [templates, setTemplates] = useState<WatchedTemplateItem[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
@@ -46,11 +46,9 @@ export function useTemplates(): UseTemplates {
     try {
       const client = IndexerClient.usingFetchTransport(indexerUrl);
       await client.identityGet();
-      // `templatesListCached` is the typed client method for this route — prefer it over
-      // the raw `getTransport().sendGet`, which would type-check nothing.
-      const { templates: cached } = await client.templatesListCached(50);
+      const { templates: watched } = await client.listWatchedTemplates();
 
-      setTemplates(cached);
+      setTemplates(watched);
       setLoadStatus("ready");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load templates");

@@ -144,8 +144,8 @@ describe("ootle-wasm@0.38.0 ABI probe", () => {
     );
 
     // Feed the single witness (as a JSON array) into the outputs statement generator.
-    // revealed = 0n: the full amount is confidential.
-    const result = wasm.generateStealthOutputsStatement(`[${witnessJson}]`, 0n);
+    // revealed = 0n: the full amount is confidential, and the WASM ignores the receiver.
+    const result = wasm.generateStealthOutputsStatement(`[${witnessJson}]`, 0n, new Uint8Array(32));
 
     expect(
       result.aggregated_output_mask,

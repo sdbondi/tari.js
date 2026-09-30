@@ -10,7 +10,7 @@
 import type {
   IndexerGetSubstateResponse,
   IndexerGetTransactionResultResponse,
-  SubstateRequirement,
+  InputDeclaration,
   TransactionEnvelope,
 } from "@tari-project/ootle-ts-bindings";
 import { IndexerClient } from "@tari-project/indexer-client";
@@ -114,10 +114,11 @@ describe("IndexerProvider.resolveInputs", () => {
     installClient(client);
     const provider = await IndexerProvider.connect({ url: "http://localhost:18300", network: Network.LocalNet });
 
-    const inputs: SubstateRequirement[] = [{ substate_id: "component_aaaa", version: null }];
+    const inputs: InputDeclaration[] = [{ substate_id: "component_aaaa", version: null, is_write: false }];
     const resolved = await provider.resolveInputs(inputs);
 
-    expect(resolved).toEqual([{ substate_id: "component_aaaa", version: 12 }]);
+    // Fills the version and preserves the declared access.
+    expect(resolved).toEqual([{ substate_id: "component_aaaa", version: 12, is_write: false }]);
     expect(substatesGet).toHaveBeenCalledTimes(1);
   });
 
@@ -127,7 +128,7 @@ describe("IndexerProvider.resolveInputs", () => {
     installClient(client);
     const provider = await IndexerProvider.connect({ url: "http://localhost:18300", network: Network.LocalNet });
 
-    const inputs: SubstateRequirement[] = [{ substate_id: "component_bbbb", version: 5 }];
+    const inputs: InputDeclaration[] = [{ substate_id: "component_bbbb", version: 5, is_write: true }];
     const resolved = await provider.resolveInputs(inputs);
 
     expect(resolved).toEqual(inputs);
@@ -140,15 +141,15 @@ describe("IndexerProvider.resolveInputs", () => {
     installClient(client);
     const provider = await IndexerProvider.connect({ url: "http://localhost:18300", network: Network.LocalNet });
 
-    await expect(provider.resolveInputs([{ substate_id: "component_missing", version: null }])).rejects.toThrow(
-      IndexerClientError,
-    );
-    await expect(provider.resolveInputs([{ substate_id: "component_missing", version: null }])).rejects.toThrow(
-      /Failed to find input "component_missing": Substate not found/,
-    );
+    await expect(
+      provider.resolveInputs([{ substate_id: "component_missing", version: null, is_write: true }]),
+    ).rejects.toThrow(IndexerClientError);
+    await expect(
+      provider.resolveInputs([{ substate_id: "component_missing", version: null, is_write: true }]),
+    ).rejects.toThrow(/Failed to find input "component_missing": Substate not found/);
 
     try {
-      await provider.resolveInputs([{ substate_id: "component_missing", version: null }]);
+      await provider.resolveInputs([{ substate_id: "component_missing", version: null, is_write: true }]);
     } catch (err) {
       expect(err).toBeInstanceOf(IndexerClientError);
       expect((err as Error).cause).toBe(underlying);
@@ -162,12 +163,12 @@ describe("IndexerProvider.resolveInputs", () => {
     installClient(client);
     const provider = await IndexerProvider.connect({ url: "http://localhost:18300", network: Network.LocalNet });
 
-    await expect(provider.resolveInputs([{ substate_id: "component_xxxx", version: null }])).rejects.toThrow(
-      IndexerClientError,
-    );
-    await expect(provider.resolveInputs([{ substate_id: "component_xxxx", version: null }])).rejects.toThrow(
-      /Failed to resolve input "component_xxxx": connection refused/,
-    );
+    await expect(
+      provider.resolveInputs([{ substate_id: "component_xxxx", version: null, is_write: true }]),
+    ).rejects.toThrow(IndexerClientError);
+    await expect(
+      provider.resolveInputs([{ substate_id: "component_xxxx", version: null, is_write: true }]),
+    ).rejects.toThrow(/Failed to resolve input "component_xxxx": connection refused/);
   });
 });
 

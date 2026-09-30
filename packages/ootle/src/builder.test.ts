@@ -256,9 +256,21 @@ describe("TransactionBuilder bulk operations and metadata", () => {
       .withMinEpoch(10)
       .withMaxEpoch(20)
       .buildUnsignedTransaction();
-    expect(tx.inputs).toEqual(inputs);
+    // A SubstateRequirement carries no access intent, so it is declared a write.
+    expect(tx.inputs).toEqual([{ substate_id: "component_x", version: 1, is_write: true }]);
     expect(tx.min_epoch).toBe(10);
     expect(tx.max_epoch).toBe(20);
+  });
+
+  it("addInput / withInputs keep an explicit is_write", () => {
+    const tx = TransactionBuilder.new(TEST_NETWORK, TEST_MAX_EPOCH)
+      .addInput({ substate_id: "component_r", version: null, is_write: false })
+      .withInputs([{ substate_id: "component_w", version: 2, is_write: true }])
+      .buildUnsignedTransaction();
+    expect(tx.inputs).toEqual([
+      { substate_id: "component_r", version: null, is_write: false },
+      { substate_id: "component_w", version: 2, is_write: true },
+    ]);
   });
 
   it("dropAllProofsInWorkspace emits the bare-string instruction (not an object)", () => {

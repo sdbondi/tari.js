@@ -8,7 +8,7 @@
 // Not re-exported from the package root; tests import via relative subpath.
 
 import type { StealthCryptoProvider } from "../stealth/crypto-provider";
-import { Mask, SCALAR_LENGTH, type DecryptedData, type Output } from "../stealth/primitives";
+import { Mask, SCALAR_LENGTH, type DecryptedData, type Output, type RevealedOutput } from "../stealth/primitives";
 import {
   BalanceProofSignature,
   StealthInput,
@@ -68,8 +68,9 @@ interface FakeSealedOutput {
 export class FakeStealthCrypto implements StealthCryptoProvider {
   public async generateOutputsStatement(
     specs: Output[],
-    revealedOutputAmount: bigint,
+    revealedOutput: RevealedOutput | null,
   ): Promise<{ statement: StealthOutputsStatement; outputMask: Mask }> {
+    const revealedOutputAmount = revealedOutput?.amount ?? 0n;
     // A stable, parseable structural stand-in for the WASM outputs statement.
     const json = JSON.stringify({
       outputs: specs.map((s) => ({
@@ -78,6 +79,7 @@ export class FakeStealthCrypto implements StealthCryptoProvider {
         resource_address: s.resourceAddress,
       })),
       revealed_amount: microTariString(revealedOutputAmount),
+      revealed_receiver: revealedOutput !== null ? toHexStr(revealedOutput.receiver) : null,
     });
     const outputMask = Mask.fromBytes(
       fakeScalar("output-mask", revealedOutputAmount, ...specs.map((s) => `${s.destination}:${s.amount}`)),

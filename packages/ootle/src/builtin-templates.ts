@@ -5,6 +5,7 @@ import type {
   ComponentAddress,
   ResourceAddress,
   PublishedTemplateAddress,
+  InputDeclaration,
   SubstateRequirement,
 } from "@tari-project/ootle-ts-bindings";
 import { TransactionBuilder } from "./builder";
@@ -36,7 +37,7 @@ export class AccountInvokeBuilder {
    * Declares the transaction's substate inputs (e.g. the source account and its
    * vaults) so the indexer resolves their versions before submission.
    */
-  public withInputs(inputs: SubstateRequirement[]): this {
+  public withInputs(inputs: Array<SubstateRequirement | InputDeclaration>): this {
     this.builder.withInputs(inputs);
     return this;
   }

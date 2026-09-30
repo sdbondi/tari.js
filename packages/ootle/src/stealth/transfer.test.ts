@@ -7,7 +7,7 @@
 // `deposit_stealth` CallMethod stub), that the statement is carried as byte-exact
 // compact JSON, and that inputs resolve through the stub provider.
 
-import type { SubstateRequirement } from "@tari-project/ootle-ts-bindings";
+import type { InputDeclaration } from "@tari-project/ootle-ts-bindings";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRANSACTION_VALIDITY_EPOCHS } from "../builder";
 import { Network } from "../network";
@@ -22,6 +22,7 @@ const RESOURCE = "resource_" + "a".repeat(64);
 const ACCOUNT = "component_" + "b".repeat(64);
 // A valid Ootle address string is not parsed by the fake crypto, so any string works.
 const DESTINATION = "account_dest_address";
+const RECEIVER = new Uint8Array(32).fill(9);
 
 /** A minimal Provider that only implements what the builder/authorizer call. */
 function stubProvider(overrides: Partial<Provider> = {}): Provider {
@@ -29,9 +30,7 @@ function stubProvider(overrides: Partial<Provider> = {}): Provider {
     network: () => Network.LocalNet,
     getCurrentEpoch: vi.fn(async () => 90),
     // `resolveInputs` echoes inputs back with version filled in (the only path prepare hits).
-    resolveInputs: vi.fn(async (inputs: SubstateRequirement[]) =>
-      inputs.map((i) => ({ ...i, version: i.version ?? 0 })),
-    ),
+    resolveInputs: vi.fn(async (inputs: InputDeclaration[]) => inputs.map((i) => ({ ...i, version: i.version ?? 0 }))),
     // `getSubstate` is called by the SDK's vault walker when prepare() has a revealed source.
     // Default to a vault-less Component so tests that don't care about vault inputs pass through.
     getSubstate: vi.fn(async () => ({
@@ -103,7 +102,7 @@ describe("StealthTransfer.prepare", () => {
 
   it("resolves inputs through the provider", async () => {
     const crypto = new FakeStealthCrypto();
-    const resolveInputs = vi.fn(async (inputs: SubstateRequirement[]) => inputs.map((i) => ({ ...i, version: 7 })));
+    const resolveInputs = vi.fn(async (inputs: InputDeclaration[]) => inputs.map((i) => ({ ...i, version: 7 })));
     const provider = stubProvider({ resolveInputs });
 
     await new StealthTransfer(provider, RESOURCE, crypto)
@@ -137,7 +136,7 @@ describe("StealthTransfer.prepare", () => {
     const spec = await new StealthTransfer(provider, RESOURCE, crypto)
       .spendRevealedInput(ACCOUNT, 1000n)
       .toStealthOutput(createOutput({ destination: DESTINATION, amount: 600n, resourceAddress: RESOURCE }))
-      .toRevealedOutput(400n)
+      .toRevealedOutput(400n, RECEIVER)
       .prepare();
 
     // withdraw -> saveVar -> StealthTransfer -> saveVar -> deposit (change).
@@ -147,6 +146,45 @@ describe("StealthTransfer.prepare", () => {
     expect(deposit).toHaveProperty("CallMethod");
     if (typeof deposit !== "object" || !("CallMethod" in deposit)) throw new Error("expected CallMethod");
     expect(deposit.CallMethod.method).toBe("deposit");
+  });
+
+  it("threads the accumulated revealed output and its receiver to the outputs statement", async () => {
+    const crypto = new FakeStealthCrypto();
+    const generate = vi.spyOn(crypto, "generateOutputsStatement");
+
+    await new StealthTransfer(stubProvider(), RESOURCE, crypto)
+      .spendRevealedInput(ACCOUNT, 1000n)
+      .toStealthOutput(createOutput({ destination: DESTINATION, amount: 600n, resourceAddress: RESOURCE }))
+      .toRevealedOutput(100n, RECEIVER)
+      .toRevealedOutput(300n, RECEIVER)
+      .prepare();
+
+    expect(generate).toHaveBeenCalledExactlyOnceWith(expect.any(Array), { amount: 400n, receiver: RECEIVER });
+  });
+
+  it("passes a null revealed output when the transfer reveals nothing", async () => {
+    const crypto = new FakeStealthCrypto();
+    const generate = vi.spyOn(crypto, "generateOutputsStatement");
+
+    await new StealthTransfer(stubProvider(), RESOURCE, crypto)
+      .spendRevealedInput(ACCOUNT, 500n)
+      .toStealthOutput(createOutput({ destination: DESTINATION, amount: 500n, resourceAddress: RESOURCE }))
+      .prepare();
+
+    expect(generate).toHaveBeenCalledExactlyOnceWith(expect.any(Array), null);
+  });
+
+  it("rejects toRevealedOutput to two different receivers", () => {
+    const transfer = new StealthTransfer(stubProvider(), RESOURCE, new FakeStealthCrypto()).toRevealedOutput(
+      100n,
+      RECEIVER,
+    );
+    expect(() => transfer.toRevealedOutput(100n, new Uint8Array(32).fill(1))).toThrow(/one receiver/);
+  });
+
+  it("rejects a toRevealedOutput receiver that is not 32 bytes", () => {
+    const transfer = new StealthTransfer(stubProvider(), RESOURCE, new FakeStealthCrypto());
+    expect(() => transfer.toRevealedOutput(100n, new Uint8Array(31))).toThrow(/receiver/);
   });
 
   it("throws when there are no inputs", async () => {
@@ -188,7 +226,7 @@ describe("StealthTransfer.prepare", () => {
     const transfer = new StealthTransfer(provider, RESOURCE, crypto)
       .spendStealthInput(ACCOUNT, fromHexStrLocal("aa".repeat(32)))
       .toStealthOutput(createOutput({ destination: DESTINATION, amount: 1n, resourceAddress: RESOURCE }))
-      .toRevealedOutput(500n);
+      .toRevealedOutput(500n, RECEIVER);
     // No spendRevealedInput call — the revealed change has nowhere to land. The type system
     // no longer rules this out (the source is part of the optional `revealedInput` tag), but
     // it is a real user error and `validate()` catches it with a guiding message.

@@ -76,7 +76,7 @@ describe("structured fields are populated", () => {
   });
 
   it("TransactionRejectedError carries txId / reason / rejectReason", () => {
-    const reject = { ExecutionFailure: "panic" } as const;
+    const reject = { ExecutionFailure: { code: "TemplateError", message: "panic" } } as const;
     const e = new TransactionRejectedError("rejected", {
       txId: "tx_123",
       reason: "panic",

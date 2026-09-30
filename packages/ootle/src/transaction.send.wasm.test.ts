@@ -24,7 +24,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type {
   IndexerSubmitTransactionResponse,
-  SubstateRequirement,
+  InputDeclaration,
   TransactionSignature,
   UnsignedTransactionV1,
 } from "@tari-project/ootle-ts-bindings";
@@ -90,7 +90,7 @@ describe("sendTransaction (WASM)", () => {
   it("signs the RESOLVED transaction and watches the id submit returned", async () => {
     // A real substate id: this test signs with real WASM, whose deserializer rejects
     // the placeholder ids the non-WASM transaction tests can get away with.
-    const resolved: SubstateRequirement[] = [{ substate_id: TEST_ACCOUNT_ADDRESS, version: 9 }];
+    const resolved: InputDeclaration[] = [{ substate_id: TEST_ACCOUNT_ADDRESS, version: 9, is_write: true }];
     const finalResult = committedResult();
 
     const resolveInputs = vi.fn(async () => resolved);
@@ -100,7 +100,7 @@ describe("sendTransaction (WASM)", () => {
 
     const signer = new RecordingSigner();
     const tx = trivialUnsignedTx();
-    tx.inputs = [{ substate_id: TEST_ACCOUNT_ADDRESS, version: null }];
+    tx.inputs = [{ substate_id: TEST_ACCOUNT_ADDRESS, version: null, is_write: true }];
 
     const out = await sendTransaction(provider, signer, tx, FAST);
 

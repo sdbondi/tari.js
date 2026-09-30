@@ -12,6 +12,7 @@ export type {
   TransactionSignature,
   Instruction,
   InstructionArg,
+  InputDeclaration,
   SubstateRequirement,
   SubstateId,
   TransactionEnvelope,

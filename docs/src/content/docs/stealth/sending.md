@@ -20,7 +20,8 @@ import {
 const spec = await new StealthTransfer(provider, resourceAddress)
   .spendRevealedInput(sourceAccount, 5_000_000n)
   .toStealthOutput(createOutput({ destination: recipientAddress, amount: 3_000_000n, resourceAddress }))
-  .toRevealedOutput(2_000_000n) // revealed change back to sourceAccount
+  // Revealed change back to sourceAccount, taken by its owner key (which signs the transaction).
+  .toRevealedOutput(2_000_000n, await secretKeyWallet.getPublicKey())
   .payFeeFromRevealed(1_000n)
   .prepare();
 

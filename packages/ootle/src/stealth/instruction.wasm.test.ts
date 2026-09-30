@@ -39,11 +39,17 @@ function realDestination(): string {
   return generateOotleAddress(pk.owner_key, pk.view_key, Network.LocalNet);
 }
 
+/** A real public key to receive the revealed output. */
+function revealedReceiver(): Uint8Array {
+  const sk = generateOotleSecretKey();
+  return ootlePublicKeyFromSecretKey(sk.owner_key, sk.view_key).owner_key;
+}
+
 async function realStatement(): Promise<StealthTransferStatement> {
   const crypto = new WasmStealthCrypto(Network.LocalNet);
   const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement(
     [createOutput({ destination: realDestination(), amount: 1000n, resourceAddress: RESOURCE })],
-    400n,
+    { amount: 400n, receiver: revealedReceiver() },
   );
   const inputsStatement = await crypto.buildInputsStatement([], 1400n);
   const balanceProof = await signBalanceProof(crypto, Mask.zero(), outputMask, inputsStatement, outputsStatement);

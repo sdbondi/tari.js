@@ -47,14 +47,14 @@ describe("FakeStealthCrypto", () => {
 
   it("produces a parseable outputs statement + 32-byte mask", async () => {
     const out = createOutput({ destination: "acc_dest", amount: 1000n, resourceAddress: RESOURCE_ADDRESS });
-    const { statement, outputMask } = await crypto.generateOutputsStatement([out], 0n);
+    const { statement, outputMask } = await crypto.generateOutputsStatement([out], null);
     expect(outputMask.toBytes().length).toBe(SCALAR_LENGTH);
     expect(() => statement.parsed()).not.toThrow();
   });
 
   it("signs a 32+32 balance proof that validates, and validateTransfer does not throw", async () => {
     const out = createOutput({ destination: "acc_dest", amount: 1000n, resourceAddress: RESOURCE_ADDRESS });
-    const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement([out], 0n);
+    const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement([out], null);
     const inputsStatement = await crypto.buildInputsStatement([], 1000n);
 
     const proof = await signBalanceProof(crypto, Mask.zero(), outputMask, inputsStatement, outputsStatement);
@@ -119,7 +119,7 @@ describe("FakeStealthCrypto", () => {
 
   it("outputs statement carrier is a StealthOutputsStatement", async () => {
     const out = createOutput({ destination: "x", amount: 1n, resourceAddress: RESOURCE_ADDRESS });
-    const { statement } = await crypto.generateOutputsStatement([out], 0n);
+    const { statement } = await crypto.generateOutputsStatement([out], null);
     expect(statement).toBeInstanceOf(StealthOutputsStatement);
   });
 });

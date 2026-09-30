@@ -7,7 +7,7 @@ import type {
   IndexerSubmitTransactionResponse,
   GetSubstatesResponse,
   TransactionEnvelope,
-  SubstateRequirement,
+  InputDeclaration,
   SubstateId,
   GetTemplateDefinitionResponse,
   ListRecentTransactionsRequest,
@@ -62,9 +62,10 @@ export interface Provider {
 
   /**
    * Resolves unversioned inputs by fetching their current version from the indexer.
-   * Returns the same list with `version` filled in for any entry that had `version: null`.
+   * Returns the same list with `version` filled in for any entry that had `version: null`,
+   * and `is_write` preserved.
    */
-  resolveInputs(inputs: SubstateRequirement[]): Promise<SubstateRequirement[]>;
+  resolveInputs(inputs: InputDeclaration[]): Promise<InputDeclaration[]>;
 
   /** Lists recent transactions. */
   listRecentTransactions(params: ListRecentTransactionsRequest): Promise<ListRecentTransactionsResponse>;

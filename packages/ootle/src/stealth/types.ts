@@ -18,6 +18,7 @@ export {
   type DecryptedData,
   type Output,
   type OutputInit,
+  type RevealedOutput,
 } from "./primitives";
 
 export {

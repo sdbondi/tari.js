@@ -25,7 +25,7 @@ export interface StubClient {
   substatesGet: ReturnType<typeof vi.fn>;
   getTransport: ReturnType<typeof vi.fn>;
   getTransactionResult: ReturnType<typeof vi.fn>;
-  templatesListCached: ReturnType<typeof vi.fn>;
+  listWatchedTemplates: ReturnType<typeof vi.fn>;
 }
 
 /** Build a {@link StubClient}; `overrides` replace individual methods. */
@@ -35,7 +35,7 @@ export function stubClient(overrides: Partial<StubClient> = {}): StubClient {
     substatesGet: vi.fn(),
     getTransport: vi.fn(),
     getTransactionResult: vi.fn(),
-    templatesListCached: vi.fn(),
+    listWatchedTemplates: vi.fn(),
     ...overrides,
   };
 }

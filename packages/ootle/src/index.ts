@@ -38,6 +38,7 @@ export type {
   TransactionSignature,
   Instruction,
   InstructionArg,
+  InputDeclaration,
   SubstateRequirement,
   SubstateId,
   TransactionEnvelope,
@@ -88,7 +89,7 @@ export {
   StealthOutputsStatement,
   StealthTransferStatement,
 } from "./stealth/types";
-export type { DecryptedData, Output, OutputInit } from "./stealth/types";
+export type { DecryptedData, Output, OutputInit, RevealedOutput } from "./stealth/types";
 
 // Receive + provider helpers: decrypt owned UTXOs, build statements, parse substates.
 export { decryptOwnedUtxo, decryptInputData, generateOutputsStatement } from "./stealth/wallet-helpers";

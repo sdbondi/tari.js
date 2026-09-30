@@ -34,7 +34,7 @@ describe("WasmStealthCrypto.generateOutputsStatement", () => {
     const crypto = new WasmStealthCrypto(Network.LocalNet);
     const { address } = makeRecipient();
 
-    const { statement, outputMask } = await crypto.generateOutputsStatement([makeOutput(address)], 0n);
+    const { statement, outputMask } = await crypto.generateOutputsStatement([makeOutput(address)], null);
 
     expect(outputMask.toBytes().length).toBe(SCALAR_LENGTH);
     expect(statement.statementJson.length).toBeGreaterThan(0);
@@ -72,7 +72,7 @@ describe("WasmStealthCrypto balance proof + validateTransfer (no stealth input)"
     // and a zero input mask (the no-stealth-input / revealed-only send path).
     const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement(
       [makeOutput(address, amount)],
-      0n,
+      null,
     );
     const inputsStatement = await crypto.buildInputsStatement([], amount);
 
@@ -95,7 +95,7 @@ describe("WasmStealthCrypto receive round-trip (deriveAeadKey + unblindOutput)",
     const recipient = makeRecipient();
     const amount = 1234n;
 
-    const { statement } = await crypto.generateOutputsStatement([makeOutput(recipient.address, amount)], 0n);
+    const { statement } = await crypto.generateOutputsStatement([makeOutput(recipient.address, amount)], null);
     // Pull the on-wire output (commitment, sender nonce, ciphertext) from the statement.
     const parsed = statement.parsed() as {
       outputs: { output: { commitment: string; sender_public_nonce: string; encrypted_data: string } }[];
@@ -122,7 +122,7 @@ describe("WasmStealthCrypto.stealthDhSecret", () => {
   it("is deterministic and 32 bytes", async () => {
     const crypto = new WasmStealthCrypto(Network.LocalNet);
     const recipient = makeRecipient();
-    const { statement } = await crypto.generateOutputsStatement([makeOutput(recipient.address)], 0n);
+    const { statement } = await crypto.generateOutputsStatement([makeOutput(recipient.address)], null);
     const parsed = statement.parsed() as { outputs: { output: { sender_public_nonce: string } }[] };
     const nonce = fromHexStr(parsed.outputs[0].output.sender_public_nonce);
 
