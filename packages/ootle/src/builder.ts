@@ -9,6 +9,7 @@ import type {
   Instruction,
   InstructionArg,
   ResourceAddress,
+  InputDeclaration,
   SubstateRequirement,
   UnsignedTransactionV1,
   PublishedTemplateAddress,
@@ -443,13 +444,20 @@ export class TransactionBuilder {
     return this;
   }
 
-  public addInput(input: SubstateRequirement): this {
-    this.unsignedTransaction.inputs.push(input);
+  /**
+   * Declare a transaction input. A {@link SubstateRequirement} (no `is_write`) is declared as a
+   * write — the conservative default: over-declaring locks more than needed, whereas writing to
+   * an input declared read aborts the transaction. Pass `is_write: false` for inputs the
+   * transaction only reads, so they take a read lock that admits concurrent readers.
+   */
+  public addInput(input: SubstateRequirement | InputDeclaration): this {
+    this.unsignedTransaction.inputs.push(toInputDeclaration(input));
     return this;
   }
 
-  public withInputs(inputs: SubstateRequirement[]): this {
-    this.unsignedTransaction.inputs.push(...inputs);
+  /** Declare several transaction inputs; see {@link addInput} for the `is_write` default. */
+  public withInputs(inputs: Array<SubstateRequirement | InputDeclaration>): this {
+    this.unsignedTransaction.inputs.push(...inputs.map(toInputDeclaration));
     return this;
   }
 
@@ -584,4 +592,13 @@ export class TransactionBuilder {
       return arg as InstructionArg;
     });
   }
+}
+
+/** Normalise an input to an {@link InputDeclaration}, declaring it a write unless it says otherwise. */
+function toInputDeclaration(input: SubstateRequirement | InputDeclaration): InputDeclaration {
+  return {
+    substate_id: input.substate_id,
+    version: input.version,
+    is_write: "is_write" in input ? input.is_write : true,
+  };
 }

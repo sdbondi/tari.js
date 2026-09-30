@@ -104,13 +104,15 @@ export async function faucetStealth(
   }
   const revealedFee = options.revealedFee ?? DEFAULT_STEALTH_FAUCET_FEE;
   const faucetAddress = options.faucetAddress ?? FAUCET_COMPONENT_ADDRESS;
-  const senderOwnerPublicKeyHex = toHexStr(await sender.secret.getPublicKey());
+  const senderOwnerPublicKey = await sender.secret.getPublicKey();
+  const senderOwnerPublicKeyHex = toHexStr(senderOwnerPublicKey);
 
   const crypto = stealthCrypto();
   const revealedInputAmount = options.stealthAmount + revealedFee;
   const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement(
     [createOutput({ destination: recipientAddress, amount: options.stealthAmount, resourceAddress: TARI_RESOURCE })],
-    revealedFee,
+    // The revealed fee bucket is taken by the sender, whose owner key signs this transaction.
+    { amount: revealedFee, receiver: senderOwnerPublicKey },
   );
   const inputsStatement = await crypto.buildInputsStatement([], revealedInputAmount);
   const balanceProof = await signBalanceProof(crypto, Mask.zero(), outputMask, inputsStatement, outputsStatement);

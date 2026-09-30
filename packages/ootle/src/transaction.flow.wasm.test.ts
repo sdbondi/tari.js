@@ -82,7 +82,7 @@ describe("sealTransaction (WASM)", () => {
 describe("resolveTransaction (WASM-adjacent)", () => {
   it("is a value-equal no-op when the provider returns inputs unchanged", async () => {
     const tx = trivialUnsignedTx();
-    tx.inputs = [{ substate_id: "component_x", version: 3 }];
+    tx.inputs = [{ substate_id: "component_x", version: 3, is_write: true }];
     const provider = fakeProvider({
       resolveInputs: async (inputs) => inputs,
     });

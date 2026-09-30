@@ -20,7 +20,7 @@ import {
 } from "@tari-project/ootle-wasm";
 import type { StealthCryptoProvider } from "./crypto-provider";
 import { assertByteLength } from "../helpers/bytes";
-import { Mask, SCALAR_LENGTH, type DecryptedData, type Output } from "./primitives";
+import { Mask, SCALAR_LENGTH, type DecryptedData, type Output, type RevealedOutput } from "./primitives";
 import {
   BalanceProofSignature,
   StealthInput,
@@ -45,7 +45,14 @@ function concatScalars(scalars: Uint8Array[], what: string): Uint8Array {
 }
 
 /**
- * The real `StealthCryptoProvider`, backed by `@tari-project/ootle-wasm@0.38.0`.
+ * The covenant claims the balance proof binds. This SDK never spends a covenant-gated
+ * (script-path) input, so every envelope it builds carries `covenant_claims: []` — see
+ * `StealthTransferStatement.toCompactJson` — and the signature must bind that same empty list.
+ */
+const NO_COVENANT_CLAIMS = "[]";
+
+/**
+ * The real `StealthCryptoProvider`, backed by `@tari-project/ootle-wasm@0.42.0`.
  *
  * Marshals between the step-02 domain types (`Mask`, `Output`, statements) and the raw
  * WASM ABI (snake_case result fields, positional args, raw `Uint8Array`s/`bigint`s).
@@ -64,7 +71,7 @@ export class WasmStealthCrypto implements StealthCryptoProvider {
 
   public async generateOutputsStatement(
     specs: Output[],
-    revealedOutputAmount: bigint,
+    revealedOutput: RevealedOutput | null,
   ): Promise<{ statement: StealthOutputsStatement; outputMask: Mask }> {
     // One witness JSON string per output (incl. change). Collect the raw strings and
     // wrap them into a JSON array by **string concatenation** — never JSON.parse +
@@ -73,7 +80,15 @@ export class WasmStealthCrypto implements StealthCryptoProvider {
     const witnesses = specs.map((spec) => this.outputWitness(spec));
     const witnessesJson = `[${witnesses.join(",")}]`;
 
-    const result = generateStealthOutputsStatement(witnessesJson, revealedOutputAmount);
+    // The WASM encodes "no revealed output" as a zero amount, for which it ignores the receiver.
+    let revealedAmount = 0n;
+    let revealedReceiver: Uint8Array = new Uint8Array(SCALAR_LENGTH);
+    if (revealedOutput !== null) {
+      assertByteLength(revealedOutput.receiver, SCALAR_LENGTH, "revealed output receiver");
+      revealedAmount = revealedOutput.amount;
+      revealedReceiver = revealedOutput.receiver;
+    }
+    const result = generateStealthOutputsStatement(witnessesJson, revealedAmount, revealedReceiver);
     assertByteLength(result.aggregated_output_mask, SCALAR_LENGTH, "StealthOutputsResult.aggregated_output_mask");
 
     return {
@@ -131,6 +146,7 @@ export class WasmStealthCrypto implements StealthCryptoProvider {
       outputMask.toBytes(),
       inputsStatementJson,
       outputsStatementJson,
+      NO_COVENANT_CLAIMS,
     );
     // Validate at the wrapper boundary — silent truncation produces invalid on-chain
     // signatures. The BalanceProofSignature constructor also enforces these.
@@ -149,6 +165,7 @@ export class WasmStealthCrypto implements StealthCryptoProvider {
       proof.signature,
       inputsStatementJson,
       outputsStatementJson,
+      NO_COVENANT_CLAIMS,
     );
   }
 

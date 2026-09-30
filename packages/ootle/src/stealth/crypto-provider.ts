@@ -1,7 +1,7 @@
 //   Copyright 2024 The Tari Project
 //   SPDX-License-Identifier: BSD-3-Clause
 
-import type { Mask, Output, DecryptedData } from "./primitives";
+import type { Mask, Output, DecryptedData, RevealedOutput } from "./primitives";
 import type {
   StealthInput,
   BalanceProofSignature,
@@ -27,13 +27,14 @@ export interface StealthCryptoProvider {
    * into a canonical WASM outputs-statement plus the summed output mask.
    *
    * @param specs - The outputs to create (incl. change).
-   * @param revealedOutputAmount - The un-confidential (revealed) µTari output amount.
+   * @param revealedOutput - The un-confidential (revealed) output and its receiver, or
+   *   `null` for none.
    * @returns The WASM-produced {@link StealthOutputsStatement} and the aggregated
    *   `outputMask` for the balance proof.
    */
   generateOutputsStatement(
     specs: Output[],
-    revealedOutputAmount: bigint,
+    revealedOutput: RevealedOutput | null,
   ): Promise<{ statement: StealthOutputsStatement; outputMask: Mask }>;
 
   /**
@@ -48,7 +49,8 @@ export interface StealthCryptoProvider {
   /**
    * Sign the balance proof over the two statements' canonical wire JSONs.
    *
-   * A transfer with **no stealth inputs** passes `inputMask = Mask.zero()`.
+   * A transfer with **no stealth inputs** passes `inputMask = Mask.zero()`. The signature
+   * also binds the envelope's covenant claims, which this SDK always emits empty.
    *
    * @returns The `(public_nonce, signature)` balance-proof signature.
    */

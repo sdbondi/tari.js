@@ -38,6 +38,12 @@ function realDestination(): string {
   return generateOotleAddress(pk.owner_key, pk.view_key, Network.LocalNet);
 }
 
+/** A real public key to receive the revealed output. */
+function revealedReceiver(): Uint8Array {
+  const sk = generateOotleSecretKey();
+  return ootlePublicKeyFromSecretKey(sk.owner_key, sk.view_key).owner_key;
+}
+
 /** A real WASM statement whose output carries a `minimum_value_promise` above 2^53. */
 async function statementWithLargeMvp(): Promise<StealthTransferStatement> {
   const crypto = new WasmStealthCrypto(Network.LocalNet);
@@ -50,7 +56,7 @@ async function statementWithLargeMvp(): Promise<StealthTransferStatement> {
         minimumValuePromise: BIG,
       }),
     ],
-    400n,
+    { amount: 400n, receiver: revealedReceiver() },
   );
   const inputsStatement = await crypto.buildInputsStatement([], BIG + 1400n);
   const balanceProof = await signBalanceProof(crypto, Mask.zero(), outputMask, inputsStatement, outputsStatement);

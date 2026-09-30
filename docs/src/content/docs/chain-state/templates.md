@@ -27,7 +27,7 @@ const definition = await client.templatesGet(templateAddress);
 
 ## Browsing templates
 
-The `template-inspector` example app (in `examples/template-inspector/`) provides a React UI for browsing all templates cached by the indexer and rendering their function definitions.
+The `template-inspector` example app (in `examples/template-inspector/`) provides a React UI for browsing the templates the indexer watches and rendering their function definitions.
 
 ```sh
 cd examples/template-inspector

@@ -15,7 +15,7 @@ import { fromHexStr } from "../helpers/hex";
 import { InvalidArgumentError } from "../errors";
 import { signBalanceProof } from "./balance-proof";
 import type { StealthCryptoProvider } from "./crypto-provider";
-import { Mask, type DecryptedData, type Output } from "./primitives";
+import { Mask, type DecryptedData, type Output, type RevealedOutput } from "./primitives";
 import { StealthTransferStatement } from "./statements";
 import { parseSubstateUtxo } from "./substate-parse";
 
@@ -107,14 +107,14 @@ export async function decryptOwnedUtxo(
  *
  * @param crypto - The crypto seam (real WASM or a fake).
  * @param specs - The stealth outputs to create (must be non-empty).
- * @param revealed - The revealed (un-confidential) output amount (0 for fully-stealth).
+ * @param revealed - The revealed (un-confidential) output and its receiver (`null` for fully-stealth).
  * @returns A complete transfer statement.
  * @throws {InvalidArgumentError} if `specs` is empty.
  */
 export async function generateOutputsStatement(
   crypto: StealthCryptoProvider,
   specs: Output[],
-  revealed: bigint,
+  revealed: RevealedOutput | null,
 ): Promise<StealthTransferStatement> {
   if (specs.length === 0) {
     throw new InvalidArgumentError("generateOutputsStatement: at least one stealth output is required");

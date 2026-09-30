@@ -140,6 +140,21 @@ export interface Output {
   minimumValuePromise: bigint;
 }
 
+/**
+ * Revealed (un-confidential) funds a stealth transfer outputs as a bucket, and the key
+ * authorised to take them.
+ *
+ * The engine requires `receiver`'s badge in the transaction's auth scope before it creates
+ * the bucket, so a statement lifted into another transaction yields its revealed funds to
+ * nobody. `null` (not a zero amount) is the only encoding of "no revealed output".
+ */
+export interface RevealedOutput {
+  /** µTari amount to reveal (must be `> 0n`). */
+  amount: bigint;
+  /** 32-byte public key whose badge must be in the transaction's auth scope. */
+  receiver: Uint8Array;
+}
+
 /** Fields callers supply to {@link createOutput}; `payTo` and `minimumValuePromise` are defaulted. */
 export interface OutputInit {
   destination: string;

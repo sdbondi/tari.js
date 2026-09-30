@@ -13,17 +13,17 @@ catalogs:
       specifier: ^7.57.7
       version: 7.57.7
     '@tari-project/indexer-client':
-      specifier: ^1.6.0
-      version: 1.6.0
+      specifier: ^1.8.0
+      version: 1.8.0
     '@tari-project/ootle-ts-bindings':
-      specifier: ^1.52.0
-      version: 1.52.0
+      specifier: ^1.55.0
+      version: 1.55.0
     '@tari-project/ootle-wasm':
-      specifier: ^0.41.0
-      version: 0.41.0
+      specifier: ^0.42.0
+      version: 0.42.0
     '@tari-project/wallet_jrpc_client':
-      specifier: ^1.22.0
-      version: 1.22.0
+      specifier: ^1.24.0
+      version: 1.24.0
     '@types/node':
       specifier: ^25.5.0
       version: 25.5.0
@@ -140,7 +140,7 @@ importers:
         version: link:../../packages/ootle-indexer
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -260,10 +260,10 @@ importers:
         version: link:../../packages/ootle-secret-key-wallet
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.41.0
+        version: 0.42.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -294,10 +294,10 @@ importers:
         version: link:../../packages/ootle-secret-key-wallet
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.41.0
+        version: 0.42.0
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -380,10 +380,10 @@ importers:
     dependencies:
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.41.0
+        version: 0.42.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -414,13 +414,13 @@ importers:
     dependencies:
       '@tari-project/indexer-client':
         specifier: 'catalog:'
-        version: 1.6.0
+        version: 1.8.0
       '@tari-project/ootle':
         specifier: 'workspace:'
         version: link:../ootle
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -454,10 +454,10 @@ importers:
         version: link:../ootle
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
-        version: 0.41.0
+        version: 0.42.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -491,10 +491,10 @@ importers:
         version: link:../ootle
       '@tari-project/ootle-ts-bindings':
         specifier: 'catalog:'
-        version: 1.52.0
+        version: 1.55.0
       '@tari-project/wallet_jrpc_client':
         specifier: 'catalog:'
-        version: 1.22.0
+        version: 1.24.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -2063,17 +2063,17 @@ packages:
   '@swc/wasm@1.15.18':
     resolution: {integrity: sha512-zeSORFArxqUwfVMTRHu8AN9k9LlfSn0CKDSzLhJDITpgLoS0xpnocxsgMjQjUcVYDgO47r9zLP49HEjH/iGsFg==}
 
-  '@tari-project/indexer-client@1.6.0':
-    resolution: {integrity: sha512-eIiWmnX9U73mbXY82LTFg7/fEFZ1KnNxH1qcllqPQinjCYUKCGf3fw4Ks0M1AUteOygO8yDRAuZ33eWPoLrrnA==}
+  '@tari-project/indexer-client@1.8.0':
+    resolution: {integrity: sha512-tXRW05zMgvJHKUSoRlvpqWzoayKR+DvOPQlO1W4W5YIjAYXgDiNJ1lbVKKbBOfzfK1aYpctmgo25PZeqv6CE5g==}
 
-  '@tari-project/ootle-ts-bindings@1.52.0':
-    resolution: {integrity: sha512-we2egABTljCemxlQoZg2vtG7qOeyW++HFz/0KtvIc9m8mHnnvnV+QpQ9r7BFbZpe5iTU+gXvNBbOmre3AT+J2g==}
+  '@tari-project/ootle-ts-bindings@1.55.0':
+    resolution: {integrity: sha512-9IxoDlOKpphkov9h2usr9oxdS3s8R2bCXizpjn36jnVmTArIXG/8FvVrt9/IN3jcP2LiHAd9sTgRaO9zr09BfA==}
 
-  '@tari-project/ootle-wasm@0.41.0':
-    resolution: {integrity: sha512-PajpMywrHV8QEr4WwfT1LQcnsNDs/CADZbk9pNovb2xdACjeIXDs3dQuWwUEJKYupMMHW5GU4YyKo2tfvAQoCw==}
+  '@tari-project/ootle-wasm@0.42.0':
+    resolution: {integrity: sha512-a7cR4vbLPSg4ghnYh6cmEZ9qTU0GkP93Lc+0pWlz19hEUESx4QmjM+FYKmW2bwlr8sKdosargTphEJ5fX+8WtA==}
 
-  '@tari-project/wallet_jrpc_client@1.22.0':
-    resolution: {integrity: sha512-nNPeX2Zhu/8wxAhNdgJkHHBIehWoZB8dN3/OyY6asCzNDEtauVYhm+3bD2rOgBzYSOOrL3Su9ojxeWVizftL2Q==}
+  '@tari-project/wallet_jrpc_client@1.24.0':
+    resolution: {integrity: sha512-7U5aa7tu/6J3dQuvfPDNShn00xlCL7TYZjZeR0bQULL30Y7SgREBZ93GxajsfyFNInP5TEkqYpR8zCIn+ljJtg==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -5515,19 +5515,19 @@ snapshots:
 
   '@swc/wasm@1.15.18': {}
 
-  '@tari-project/indexer-client@1.6.0':
+  '@tari-project/indexer-client@1.8.0':
     dependencies:
-      '@tari-project/ootle-ts-bindings': 1.52.0
+      '@tari-project/ootle-ts-bindings': 1.55.0
 
-  '@tari-project/ootle-ts-bindings@1.52.0':
+  '@tari-project/ootle-ts-bindings@1.55.0':
     dependencies:
       bech32: 2.0.0
 
-  '@tari-project/ootle-wasm@0.41.0': {}
+  '@tari-project/ootle-wasm@0.42.0': {}
 
-  '@tari-project/wallet_jrpc_client@1.22.0':
+  '@tari-project/wallet_jrpc_client@1.24.0':
     dependencies:
-      '@tari-project/ootle-ts-bindings': 1.52.0
+      '@tari-project/ootle-ts-bindings': 1.55.0
 
   '@tybys/wasm-util@0.10.1':
     dependencies:

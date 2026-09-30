@@ -120,7 +120,8 @@ export async function faucetStealth(
   }
   const revealedFee = options.revealedFee ?? DEFAULT_STEALTH_FAUCET_FEE;
   const faucetAddress = options.faucetAddress ?? faucetComponentAddress();
-  const senderOwnerPublicKeyHex = toHexStr(await senderWallet.secret.getPublicKey());
+  const senderOwnerPublicKey = await senderWallet.secret.getPublicKey();
+  const senderOwnerPublicKeyHex = toHexStr(senderOwnerPublicKey);
 
   // Build the complete (balance-proof-signed) statement. We deliberately do NOT use
   // the SDK's public `generateOutputsStatement` helper here because it hard-codes
@@ -133,7 +134,8 @@ export async function faucetStealth(
   const revealedInputAmount = stealthAmount + revealedFee;
   const { statement: outputsStatement, outputMask } = await crypto.generateOutputsStatement(
     [createOutput({ destination: recipientAddress, amount: stealthAmount, resourceAddress: TARI_RESOURCE })],
-    revealedFee,
+    // The revealed fee bucket is taken by the sender, whose owner key signs this transaction.
+    { amount: revealedFee, receiver: senderOwnerPublicKey },
   );
   const inputsStatement = await crypto.buildInputsStatement([], revealedInputAmount);
   const balanceProof = await signBalanceProof(crypto, Mask.zero(), outputMask, inputsStatement, outputsStatement);

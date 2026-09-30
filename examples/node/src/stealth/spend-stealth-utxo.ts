@@ -115,7 +115,7 @@ await runScript(async () => {
     .toStealthOutput(
       createOutput({ destination: recipient.ownerAddress, amount: SEED_AMOUNT, resourceAddress: TARI_RESOURCE }),
     )
-    .toRevealedOutput(SPEND_FEE)
+    .toRevealedOutput(SPEND_FEE, await sender.secret.getPublicKey())
     .payFeeFromRevealed(SPEND_FEE);
 
   const { pending } = await sendStealth(provider, sender, transfer, { viewSecret });

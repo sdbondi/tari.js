@@ -72,7 +72,8 @@ await runScript(async () => {
         resourceAddress: TARI_RESOURCE,
       }),
     )
-    .toRevealedOutput(REVEALED_CHANGE)
+    // The change goes to the sender, whose owner key signs this transaction.
+    .toRevealedOutput(REVEALED_CHANGE, await sender.secret.getPublicKey())
     .payFeeFromRevealed(FEE);
 
   const viewSecret = sender.secret.getViewOnlySecret();

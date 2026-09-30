@@ -37,7 +37,10 @@ interface WebAuthnPublicKeyOptions {
 }
 
 export interface AuthOptions {
-  /** Permissions to request from the wallet daemon. Defaults to `["Admin"]`. */
+  /**
+   * Permissions to request from the wallet daemon. Defaults to `["Admin"]`. Not applied when
+   * this call enrols the wallet's first WebAuthn credential: that bootstrap token is always `Admin`.
+   */
   permissions?: Permission[];
   /** Application name used as the WebAuthn username/identifier. Defaults to `"tari-wallet-sdk"`. */
   appName?: string;
@@ -94,12 +97,13 @@ async function authenticateWebAuthn(
     );
   }
 
-  const { registered } = await client.webauthnAlreadyRegistered({ username: appName });
+  // "Is this wallet enrolled?" — the wallet is single-user, so this is wallet-wide, not per `appName`.
+  const { registered } = await client.webauthnAlreadyRegistered({});
 
   if (registered) {
     return webauthnLogin(client, appName, permissions);
   } else {
-    return webauthnRegister(client, appName, permissions);
+    return webauthnRegister(client, appName);
   }
 }
 
@@ -143,11 +147,12 @@ async function webauthnLogin(client: WalletDaemonClient, appName: string, permis
   });
 }
 
-async function webauthnRegister(
-  client: WalletDaemonClient,
-  appName: string,
-  permissions: Permission[],
-): Promise<string> {
+/**
+ * Enrol the wallet's first (and only) WebAuthn credential. The daemon refuses enrolment once the
+ * wallet has a credential, and the bootstrap token it returns carries a fixed `Admin` permission
+ * set of its choosing — the caller's requested permissions do not apply to it.
+ */
+async function webauthnRegister(client: WalletDaemonClient, appName: string): Promise<string> {
   const startResponse = await client.webauthnStartRegistration({ username: appName });
 
   if (!startResponse.public_key) {
@@ -193,7 +198,6 @@ async function webauthnRegister(
   const { token } = await client.webauthnFinishRegistration({
     session_id: startResponse.session_id,
     credential,
-    requested_permissions: permissions,
   });
 
   return token;

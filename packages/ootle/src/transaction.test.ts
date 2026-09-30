@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   IndexerGetTransactionResultResponse,
   IndexerTransactionFinalizedResult,
-  SubstateRequirement,
+  InputDeclaration,
 } from "@tari-project/ootle-ts-bindings";
 import {
   buildTransactionSignature,
@@ -230,12 +230,12 @@ describe("serializeUnsignedTx", () => {
 
 describe("resolveTransaction", () => {
   it("delegates input resolution to the provider and returns a new tx with the resolved inputs", async () => {
-    const resolved: SubstateRequirement[] = [{ substate_id: "component_x", version: 7 }];
+    const resolved: InputDeclaration[] = [{ substate_id: "component_x", version: 7, is_write: true }];
     const resolveInputs = vi.fn().mockResolvedValue(resolved);
     const provider = fakeProvider({ resolveInputs });
 
     const tx = trivialUnsignedTx();
-    tx.inputs = [{ substate_id: "component_x", version: null }];
+    tx.inputs = [{ substate_id: "component_x", version: null, is_write: true }];
 
     const out = await resolveTransaction(provider, tx);
 

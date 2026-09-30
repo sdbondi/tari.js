@@ -15,11 +15,12 @@ import type { Provider } from "../provider";
 import { resolveTransaction } from "../transaction";
 import { amountLiteral, resourceAddressLiteral } from "../helpers/cbor-literal";
 import { toHexStr } from "../helpers/hex";
+import { assertByteLength } from "../helpers/bytes";
 import { getVaultIdsForAccount } from "../helpers/vault-walker";
 import { InvalidArgumentError } from "../errors";
 import { WasmStealthCrypto } from "./wasm-crypto";
 import type { StealthCryptoProvider } from "./crypto-provider";
-import type { Mask, Output } from "./primitives";
+import { SCALAR_LENGTH, type Mask, type Output, type RevealedOutput } from "./primitives";
 import { StealthInput, StealthTransferStatement } from "./statements";
 import { stealthUtxoSubstateId } from "./substate-parse";
 import { STEALTH_INPUT_BUCKET, STEALTH_REVEALED_CHANGE_BUCKET, stealthTransferInstruction } from "./instruction";
@@ -46,7 +47,11 @@ export interface StealthTransferState {
    */
   inputsToSpend: Map<string, { input: StealthInput; owner: string }>;
   outputs: Output[];
-  revealedOutputAmount: bigint;
+  /**
+   * The accumulated revealed change and the key authorised to take it, or `null` when the
+   * transfer reveals nothing.
+   */
+  revealedOutput: RevealedOutput | null;
 }
 
 /**
@@ -98,7 +103,7 @@ const PENDING_MAX_EPOCH = 0;
  * const spec = await new StealthTransfer(provider, resourceAddress)
  *   .spendRevealedInput(account, 5n * TARI)
  *   .toStealthOutput(createOutput({ destination, amount: 3n * TARI, resourceAddress }))
- *   .toRevealedOutput(1n * TARI)   // revealed change back to `account`
+ *   .toRevealedOutput(1n * TARI, accountPublicKey)   // revealed change back to `account`
  *   .payFeeFromRevealed(1n * TARI)
  *   .prepare();
  * ```
@@ -135,7 +140,7 @@ export class StealthTransfer {
       revealedInput: null,
       inputsToSpend: new Map(),
       outputs: [],
-      revealedOutputAmount: 0n,
+      revealedOutput: null,
     };
   }
 
@@ -171,13 +176,31 @@ export class StealthTransfer {
   /**
    * Add revealed (un-confidential) change, returned to the revealed source account.
    *
-   * @throws {InvalidArgumentError} if `amount` is not `> 0`.
+   * `receiver` is the public key authorised to take the revealed bucket: the engine requires
+   * its badge in the transaction's auth scope, so it must be the key of a signer of this
+   * transaction — normally the source account's owner key. Calling this more than once
+   * accumulates the amount but the receiver must be the same.
+   *
+   * @throws {InvalidArgumentError} if `amount` is not `> 0`, `receiver` is not 32 bytes,
+   *   or a different receiver is supplied on a second call.
    */
-  public toRevealedOutput(amount: bigint): this {
+  public toRevealedOutput(amount: bigint, receiver: Uint8Array): this {
     if (amount <= 0n) {
       throw new InvalidArgumentError(`toRevealedOutput amount must be > 0, got ${amount}`);
     }
-    this.state.revealedOutputAmount += amount;
+    assertByteLength(receiver, SCALAR_LENGTH, "toRevealedOutput receiver");
+    const existing = this.state.revealedOutput;
+    if (existing !== null && toHexStr(existing.receiver) !== toHexStr(receiver)) {
+      throw new InvalidArgumentError(
+        `toRevealedOutput: all revealed output must go to one receiver ` +
+          `(${toHexStr(existing.receiver)} != ${toHexStr(receiver)})`,
+      );
+    }
+    this.state.revealedOutput = {
+      amount: (existing?.amount ?? 0n) + amount,
+      // Defensive copy, matching StealthInput / createOutput.
+      receiver: existing?.receiver ?? new Uint8Array(receiver),
+    };
     return this;
   }
 
@@ -293,7 +316,7 @@ export class StealthTransfer {
     // 2. Outputs statement (+ aggregated output mask) from the crypto seam.
     const { statement: outputsStatement, outputMask } = await this.crypto.generateOutputsStatement(
       this.state.outputs,
-      this.state.revealedOutputAmount,
+      this.state.revealedOutput,
     );
 
     // 3. Inputs statement: the stealth input commitments + the revealed input
@@ -392,12 +415,13 @@ export class StealthTransfer {
     const hasStealthInputs = this.state.inputsToSpend.size > 0;
     const revealedAmount = this.state.revealedInput?.amount ?? 0n;
     const hasInput = revealedAmount > 0n || hasStealthInputs;
+    const revealedOutAmount = this.state.revealedOutput?.amount ?? 0n;
     if (!hasInput) {
       throw new InvalidArgumentError(
         "StealthTransfer.prepare: no inputs — call spendRevealedInput or spendStealthInput first",
       );
     }
-    if (this.state.outputs.length === 0 && this.state.revealedOutputAmount === 0n) {
+    if (this.state.outputs.length === 0 && this.state.revealedOutput === null) {
       throw new InvalidArgumentError(
         "StealthTransfer.prepare: no outputs — call toStealthOutput or toRevealedOutput first",
       );
@@ -407,7 +431,7 @@ export class StealthTransfer {
       // transfer is a plain public transfer, not this builder's job).
       throw new InvalidArgumentError("StealthTransfer.prepare: at least one stealth output is required");
     }
-    if (this.state.revealedOutputAmount > 0n && this.state.revealedInput === null) {
+    if (this.state.revealedOutput !== null && this.state.revealedInput === null) {
       // Revealed change needs an account to deposit back into — without a revealed source,
       // there is no destination for the change bucket the StealthTransfer instruction emits.
       throw new InvalidArgumentError(
@@ -420,12 +444,12 @@ export class StealthTransfer {
     // the on-chain balance proof.
     if (!hasStealthInputs) {
       const stealthOut = this.state.outputs.reduce((sum, o) => sum + o.amount, 0n);
-      const totalOut = stealthOut + this.state.revealedOutputAmount;
+      const totalOut = stealthOut + revealedOutAmount;
       const totalIn = revealedAmount;
       if (totalIn !== totalOut) {
         throw new InvalidArgumentError(
           `StealthTransfer.prepare: unbalanced transfer — revealed input ${totalIn} != ` +
-            `stealth out ${stealthOut} + revealed out ${this.state.revealedOutputAmount} (= ${totalOut})`,
+            `stealth out ${stealthOut} + revealed out ${revealedOutAmount} (= ${totalOut})`,
         );
       }
     }
@@ -471,9 +495,9 @@ export class StealthTransfer {
     );
 
     // When there is revealed change, the StealthTransfer instruction outputs a bucket for
-    // it (`revealed_output_amount > 0`); save it and deposit back to the source account.
+    // it (`revealed_output` is set); save it and deposit back to the source account.
     // `validate()` enforces the source-present invariant before we get here.
-    if (this.state.revealedOutputAmount > 0n && revealed !== null) {
+    if (this.state.revealedOutput !== null && revealed !== null) {
       this.builder
         .saveVar(STEALTH_REVEALED_CHANGE_BUCKET)
         .callMethod({ componentAddress: revealed.source, methodName: "deposit" }, [

@@ -53,7 +53,7 @@ import { StealthTransfer, WalletStealthAuthorizer, WasmStealthCrypto } from "@ta
 const transfer = new StealthTransfer(provider, TARI_RESOURCE, new WasmStealthCrypto(NETWORK))
   .spendRevealedInput(account, 4n * TARI)
   .toStealthOutput({ destination: recipient, amount: 1n * TARI, resourceAddress: TARI_RESOURCE })
-  .toRevealedOutput(2n * TARI)
+  .toRevealedOutput(2n * TARI, accountOwnerPublicKey) // key that signs for `account`
   .payFeeFromRevealed(1n * TARI);
 
 // 2. prepare — emits the on-chain StealthTransfer instruction, resolves

@@ -17,7 +17,7 @@ Think of it like reading the documentation for a smart contract — directly fro
 ## What you'll learn
 
 - How to use `IndexerClient` directly (lower-level than `IndexerProvider`)
-- How to list cached templates from the indexer
+- How to list the templates the indexer watches
 - How to fetch a template's full ABI
 - How to render structured on-chain type information in a React UI
 
@@ -66,7 +66,7 @@ The public Esmeralda testnet indexer is pre-configured. The app loads automatica
 
 **Top bar** — Shows the current indexer URL and a template count badge (e.g. "12 templates · Esmeralda testnet"). You can edit the URL and press Enter to reconnect to a different indexer.
 
-**Template list (left panel)** — A scrollable list of all templates cached by the indexer, each showing its name (if set) and a truncated address. Use the **Filter** box to search by name or address.
+**Template list (left panel)** — A scrollable list of the templates the indexer watches, each showing its name (if set) and a truncated address. Use the **Filter** box to search by name or address.
 
 **ABI viewer (right panel)** — Click any template in the list to load and display its ABI. Each function is shown as a collapsible card with:
 

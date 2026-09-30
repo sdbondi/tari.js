@@ -172,7 +172,8 @@ export function useStealthOps(): UseStealthOps {
         );
 
       if (input.revealed > 0n) {
-        transfer.toRevealedOutput(input.revealed);
+        // The change goes back to the sender, whose owner key signs this transaction.
+        transfer.toRevealedOutput(input.revealed, await identity.secret.getPublicKey());
       }
       transfer.payFeeFromRevealed(input.fee);
 

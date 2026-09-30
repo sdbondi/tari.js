@@ -10,7 +10,7 @@ import type {
   ListRecentTransactionsRequest,
   ListRecentTransactionsResponse,
   SubstateId,
-  SubstateRequirement,
+  InputDeclaration,
   TransactionEnvelope,
 } from "@tari-project/ootle-ts-bindings";
 import type { Provider } from "@tari-project/ootle";
@@ -138,9 +138,9 @@ export class IndexerProvider implements Provider {
     return this.client.getTransactionResult(transactionId);
   }
 
-  public async resolveInputs(inputs: SubstateRequirement[]): Promise<SubstateRequirement[]> {
+  public async resolveInputs(inputs: InputDeclaration[]): Promise<InputDeclaration[]> {
     return await Promise.all(
-      inputs.map(async (req): Promise<SubstateRequirement> => {
+      inputs.map(async (req): Promise<InputDeclaration> => {
         if (req.version !== null) {
           return req;
         }
@@ -149,7 +149,7 @@ export class IndexerProvider implements Provider {
             version: null,
             local_search_only: false,
           });
-          return { substate_id: req.substate_id, version: substate.version };
+          return { ...req, version: substate.version };
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           if (isNotFoundError(error)) {
