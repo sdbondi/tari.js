@@ -23,7 +23,7 @@ function outputBody(overrides: Partial<OutputBody> = {}): OutputBody {
 
 function utxoSubstate(utxo: Utxo): IndexerGetSubstateResponse {
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, substate, verified: true };
+  return { version: 0, state: { up: { substate } }, verified: true };
 }
 
 describe("commitmentOf", () => {
@@ -90,7 +90,7 @@ describe("parseSubstateUtxo", () => {
   it("returns null for a non-Utxo substate arm (Component)", () => {
     const substate: IndexerGetSubstateResponse = {
       version: 0,
-      substate: { Component: {} as never },
+      state: { up: { substate: { Component: {} as never } } },
       verified: true,
     };
     expect(parseSubstateUtxo(substate, UTXO_ID)).toBeNull();

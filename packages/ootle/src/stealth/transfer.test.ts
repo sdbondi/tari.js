@@ -36,7 +36,7 @@ function stubProvider(overrides: Partial<Provider> = {}): Provider {
     getSubstate: vi.fn(async () => ({
       address: "",
       version: 0,
-      substate: { Component: { body: { state: {} } } },
+      state: { up: { substate: { Component: { body: { state: {} } } } } },
       created_by_transaction: "",
     })),
     getStealthUtxo: vi.fn(),
@@ -247,7 +247,7 @@ describe("StealthTransfer.prepare", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        substate: { Component: { body: { state: componentState } } },
+        state: { up: { substate: { Component: { body: { state: componentState } } } } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });

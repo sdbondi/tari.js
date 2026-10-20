@@ -11,6 +11,7 @@
 
 import type { IndexerGetSubstateResponse, OutputBody, SubstateValue, Utxo } from "@tari-project/ootle-ts-bindings";
 import { fromHexStr, toHexStr } from "../helpers/hex";
+import { upSubstateValue } from "../helpers/substate";
 import { SCALAR_LENGTH } from "./primitives";
 
 /** Substate-id prefix for a stealth/confidential UTXO (`utxo_{resourceHex}_{commitmentHex}`). */
@@ -96,8 +97,8 @@ export interface ParsedUtxo {
  * @param substateId - The substate id the response was fetched by (source of the commitment).
  */
 export function parseSubstateUtxo(substate: IndexerGetSubstateResponse, substateId: string): ParsedUtxo | null {
-  const value = substate.substate;
-  if (!isUtxoSubstate(value)) {
+  const value = upSubstateValue(substate);
+  if (value === null || !isUtxoSubstate(value)) {
     return null;
   }
   const utxo = value.Utxo;

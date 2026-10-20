@@ -77,7 +77,7 @@ describe("resolveWantInputs — SpecificSubstate", () => {
   it("calls substatesGet to fill in the version when none is provided", async () => {
     const substatesGet = vi
       .fn()
-      .mockResolvedValue({ version: 4, substate: { Utxo: { output: null, is_frozen: false } } });
+      .mockResolvedValue({ version: 4, state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } } });
     const client = makeClient({ substatesGet });
 
     const result = await resolveWantInputs(client, [{ type: "SpecificSubstate", substateId: "component_yyy" }]);

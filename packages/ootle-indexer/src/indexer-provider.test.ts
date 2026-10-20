@@ -47,7 +47,7 @@ describe("IndexerProvider.getStealthUtxo", () => {
   it("composes the right substate id from resource address + commitment", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 3,
-      substate: { Utxo: { output: null, is_frozen: false } },
+      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
       verified: true,
     };
     const substatesGet = vi.fn().mockResolvedValue(response);
@@ -67,7 +67,7 @@ describe("IndexerProvider.getStealthUtxo", () => {
   it("accepts a bare resource hex (no resource_ prefix)", async () => {
     const substatesGet = vi
       .fn()
-      .mockResolvedValue({ version: 0, substate: { Utxo: { output: null, is_frozen: false } } });
+      .mockResolvedValue({ version: 0, state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } } });
     const { provider, client } = await connectWithStub(substatesGet);
 
     await provider.getStealthUtxo(RESOURCE_HEX, COMMITMENT);

@@ -13,6 +13,7 @@
 
 import type { ComponentAddress } from "@tari-project/ootle-ts-bindings";
 import type { Provider } from "../provider";
+import { upSubstateValue } from "./substate";
 
 /** CBOR tag for a `VaultId` payload in the JSON-rendered `tari_bor::Value` (BinaryTag::VAULT_ID). */
 const VAULT_ID_BINARY_TAG = 132;
@@ -46,7 +47,7 @@ export function* iterVaultIdsInState(value: unknown): Generator<string> {
  */
 export async function getVaultIdsForAccount(provider: Provider, account: ComponentAddress): Promise<string[]> {
   const response = await provider.getSubstate(account);
-  const componentValue = response.substate;
+  const componentValue = upSubstateValue(response);
   if (!isComponentSubstate(componentValue)) return [];
   return Array.from(iterVaultIdsInState(componentValue.Component.body.state));
 }

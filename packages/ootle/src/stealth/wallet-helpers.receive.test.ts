@@ -42,7 +42,7 @@ async function ownedUtxoSubstate(crypto: FakeStealthCrypto): Promise<IndexerGetS
     is_frozen: false,
   };
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, substate, verified: true };
+  return { version: 0, state: { up: { substate } }, verified: true };
 }
 
 describe("decryptOwnedUtxo", () => {
@@ -89,7 +89,7 @@ describe("decryptOwnedUtxo", () => {
     const crypto = new FakeStealthCrypto();
     const substate: IndexerGetSubstateResponse = {
       version: 0,
-      substate: { Component: {} as never },
+      state: { up: { substate: { Component: {} as never } } },
       verified: true,
     };
     await expect(decryptOwnedUtxo(crypto, VIEW_SECRET, substate, UTXO_ID)).resolves.toBeNull();
