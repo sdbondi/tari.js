@@ -112,7 +112,7 @@ describe("getVaultIdsForAccount", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        substate: { Component: { body: { state: componentState } } },
+        state: { up: { substate: { Component: { body: { state: componentState } } } } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });
@@ -124,7 +124,7 @@ describe("getVaultIdsForAccount", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        substate: { Vault: { resource_container: {} } },
+        state: { up: { substate: { Vault: { resource_container: {} } } } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });

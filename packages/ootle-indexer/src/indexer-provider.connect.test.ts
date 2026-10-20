@@ -72,7 +72,7 @@ describe("IndexerProvider.getSubstate", () => {
   it("passes through to client.substatesGet with default version=null", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 3,
-      substate: { Utxo: { output: null, is_frozen: false } },
+      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
       verified: true,
     };
     const client = defaultStubClient({ substatesGet: vi.fn().mockResolvedValue(response) });
@@ -92,7 +92,7 @@ describe("IndexerProvider.getSubstate", () => {
   it("threads a specific version through to client.substatesGet", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 7,
-      substate: { Utxo: { output: null, is_frozen: false } },
+      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
       verified: true,
     };
     const client = defaultStubClient({ substatesGet: vi.fn().mockResolvedValue(response) });
@@ -117,7 +117,10 @@ describe("IndexerProvider.resolveInputs", () => {
   it("fills in the version for unversioned inputs from substatesGet", async () => {
     const substatesGet = vi
       .fn()
-      .mockResolvedValueOnce({ version: 12, substate: { Utxo: { output: null, is_frozen: false } } });
+      .mockResolvedValueOnce({
+        version: 12,
+        state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
+      });
     const client = defaultStubClient({ substatesGet });
     installClient(client);
     const provider = await IndexerProvider.connect({ url: "http://localhost:18300", network: Network.LocalNet });

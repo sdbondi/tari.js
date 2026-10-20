@@ -2,7 +2,7 @@
 //   SPDX-License-Identifier: BSD-3-Clause
 
 import type { Amount, ComponentAddress, ResourceAddress } from "@tari-project/ootle-ts-bindings";
-import { iterVaultIdsInState } from "@tari-project/ootle";
+import { iterVaultIdsInState, upSubstateValue } from "@tari-project/ootle";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
 
 interface ComponentSubstateArm {
@@ -55,7 +55,7 @@ export async function getAccountBalances(
   account: ComponentAddress,
 ): Promise<Map<ResourceAddress, Amount>> {
   const componentResponse = await provider.getSubstate(account);
-  const componentValue = componentResponse.substate;
+  const componentValue = upSubstateValue(componentResponse);
   if (!isComponentSubstate(componentValue)) return new Map();
 
   const vaultIds = Array.from(iterVaultIdsInState(componentValue.Component.body.state));

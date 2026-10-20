@@ -30,7 +30,7 @@ export function fakeProvider(overrides: Partial<Provider> = {}): Provider {
     getSubstate: vi.fn(async () => ({
       address: "",
       version: 0,
-      substate: { Component: { body: { state: {} } } },
+      state: { up: { substate: { Component: { body: { state: {} } } } } },
       created_by_transaction: "",
     })),
     getStealthUtxo: vi.fn(),

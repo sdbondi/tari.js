@@ -12,7 +12,13 @@ const substate = await provider.getSubstate("component_0x…");
 console.log(substate);
 ```
 
-Returns an `IndexerGetSubstateResponse` with the substate data and version.
+Returns an `IndexerGetSubstateResponse` with the substate version and its `state`. Use `upSubstateValue` to read the substate value:
+
+```ts
+import { upSubstateValue } from "@tari-project/ootle";
+
+const value = upSubstateValue(substate); // SubstateValue, or null if the version is down
+```
 
 ## Fetch multiple substates
 

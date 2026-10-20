@@ -22,6 +22,7 @@ export { toHexStr, fromHexStr } from "./hex";
 export { defaultIndexerUrl } from "./network";
 export { type ParsedWorkspaceKey, parseWorkspaceStringKey } from "./workspace";
 export { getVaultIdsForAccount, iterVaultIdsInState } from "./vault-walker";
+export { upSubstateValue } from "./substate";
 export {
   TARI_RESOURCE_ADDRESS,
   XTR_FAUCET_COMPONENT_ADDRESS,

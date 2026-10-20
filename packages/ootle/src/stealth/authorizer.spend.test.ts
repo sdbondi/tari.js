@@ -96,7 +96,7 @@ async function ownedUtxo(
     is_frozen: false,
   };
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, substate, verified: true };
+  return { version: 0, state: { up: { substate } }, verified: true };
 }
 
 /**
@@ -180,7 +180,7 @@ function stubProvider(overrides: Partial<Provider> = {}): Provider {
     getSubstate: vi.fn(async () => ({
       address: "",
       version: 0,
-      substate: { Component: { body: { state: {} } } },
+      state: { up: { substate: { Component: { body: { state: {} } } } } },
       created_by_transaction: "",
     })),
     getStealthUtxo: vi.fn(),
@@ -397,19 +397,23 @@ describe("WalletStealthAuthorizer.prepare (stealth inputs)", () => {
     const { encryptedData } = sealFakeOutput(400n, MASK_B, foreignAead);
     const foreignUtxoB: IndexerGetSubstateResponse = {
       version: 0,
-      substate: {
-        Utxo: {
-          output: {
-            output: {
-              public_nonce: NONCE_B,
-              encrypted_data: toHexStr(encryptedData),
-              minimum_value_promise: 0,
-              viewable_balance: null,
+      state: {
+        up: {
+          substate: {
+            Utxo: {
+              output: {
+                output: {
+                  public_nonce: NONCE_B,
+                  encrypted_data: toHexStr(encryptedData),
+                  minimum_value_promise: 0,
+                  viewable_balance: null,
+                },
+                auth: {} as never,
+                tag: 0 as never,
+              },
+              is_frozen: false,
             },
-            auth: {} as never,
-            tag: 0 as never,
           },
-          is_frozen: false,
         },
       },
       verified: true,
