@@ -42,7 +42,8 @@ const TAG_NON_FUNGIBLE_ADDRESS = 130;
 const TAG_RESOURCE_ADDRESS = 131;
 const TAG_VAULT_ID = 132;
 const TAG_CLAIMED_OUTPUT_TOMBSTONE_ADDRESS = 136;
-const TAG_TEMPLATE_ADDRESS = 137;
+// 137 (`PublishedTemplateAddress`) is engine-internal: a template's `TemplateAddress`
+// parameter is an untagged `Hash32`, so `templateAddressLiteral` does not emit it.
 const TAG_VALIDATOR_FEE_POOL = 138;
 const TAG_UTXO = 141;
 
@@ -221,13 +222,14 @@ export function vaultIdLiteral(address: VaultId): InstructionArg {
 }
 
 /**
- * CBOR-encode a `PublishedTemplateAddress` as `Tag(137, bytes(32))`. Accepts
- * either the `template_<hex>` form or the bare 64-hex-char tail.
+ * CBOR-encode a template address as an untagged `bytes(32)`, the encoding of a
+ * template's `TemplateAddress` (`Hash32`) parameter. Accepts either the
+ * `template_<hex>` form or the bare 64-hex-char tail.
  *
  * @throws {InvalidArgumentError} if the address body is not 32 bytes (64 hex chars).
  */
 export function templateAddressLiteral(address: PublishedTemplateAddress): InstructionArg {
-  return objectKeyLiteral(TAG_TEMPLATE_ADDRESS, address, "template_");
+  return bytesLiteral(objectKeyBytes(address, "template_"));
 }
 
 /**
@@ -307,15 +309,21 @@ function objectKeyLiteral(tag: number, address: string, prefix: string): Instruc
 
 /** Append `Tag(tag, bytes(32))` for a bech32-style 32-byte `ObjectKey` address. */
 function appendObjectKey(out: number[], tag: number, address: string, prefix: string): void {
+  const bytes = objectKeyBytes(address, prefix);
+  appendHead(out, MAJOR_TAG, BigInt(tag));
+  appendHead(out, MAJOR_BYTES, BigInt(OBJECT_KEY_LEN));
+  appendBytes(out, bytes);
+}
+
+/** Strip an optional address prefix and decode the 32-byte `ObjectKey` body. */
+function objectKeyBytes(address: string, prefix: string): Uint8Array {
   const hex = address.startsWith(prefix) ? address.slice(prefix.length) : address;
   if (hex.length !== OBJECT_KEY_HEX_LEN) {
     throw new InvalidArgumentError(
       `${prefix}address must be 32 bytes (${OBJECT_KEY_HEX_LEN} hex chars), got ${hex.length}`,
     );
   }
-  appendHead(out, MAJOR_TAG, BigInt(tag));
-  appendHead(out, MAJOR_BYTES, BigInt(OBJECT_KEY_LEN));
-  appendBytes(out, fromHexStr(hex));
+  return fromHexStr(hex);
 }
 
 /**

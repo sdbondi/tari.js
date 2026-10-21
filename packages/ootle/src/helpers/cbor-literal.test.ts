@@ -200,10 +200,10 @@ describe("object-key address literals (Tag(N, bytes(32)))", () => {
     expect(vaultIdLiteral(body)).toEqual({ Literal: "d8845820" + body });
   });
 
-  it("encodes a TemplateAddress as Tag(137, bytes(32))", () => {
-    // tag 137 = 0xd8 0x89.
-    expect(templateAddressLiteral("template_" + body)).toEqual({ Literal: "d8895820" + body });
-    expect(templateAddressLiteral(body)).toEqual({ Literal: "d8895820" + body });
+  it("encodes a TemplateAddress as an untagged bytes(32)", () => {
+    // A template's `TemplateAddress` parameter is a bare `Hash32`, not `Tag(137, ...)`.
+    expect(templateAddressLiteral("template_" + body)).toEqual({ Literal: "5820" + body });
+    expect(templateAddressLiteral(body)).toEqual({ Literal: "5820" + body });
   });
 
   it("encodes a ClaimedOutputTombstoneAddress as Tag(136, bytes(32))", () => {
