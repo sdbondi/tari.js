@@ -7,7 +7,7 @@
 // mock that returns a non-OK response.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { openEventStream, parseSseChunk } from "./event-stream";
+import { MAX_SSE_EVENT_DATA_LENGTH, MAX_SSE_LINE_LENGTH, openEventStream, parseSseChunk } from "./event-stream";
 
 describe("parseSseChunk", () => {
   it("parses a single complete event with `event:` and JSON `data:`", () => {
@@ -196,5 +196,127 @@ describe("openEventStream streaming", () => {
 
     expect(seen).toEqual([]);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("openEventStream parsing and bounds", () => {
+  const URL = "http://localhost:18300/events";
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** A `Response` whose body streams the given chunks, then closes. */
+  function sseResponse(chunks: string[]): Response {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    });
+    return new Response(body, { status: 200 });
+  }
+
+  /** Collects every event from a single connection that streams `chunks`, plus any back-off warnings. */
+  async function collectOnce(chunks: string[]): Promise<{ events: unknown[]; warnings: string[] }> {
+    const controller = new AbortController();
+    const warnings: string[] = [];
+    vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+      warnings.push(args.map(String).join(" "));
+      // Release the back-off sleep, which registers its abort listener right after this call
+      queueMicrotask(() => controller.abort());
+    });
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(sseResponse(chunks))
+      .mockImplementation(async () => {
+        // The first body closed cleanly and the loop reconnected: stop here
+        controller.abort();
+        throw new DOMException("aborted", "AbortError");
+      });
+
+    const events: unknown[] = [];
+    for await (const event of openEventStream(URL, controller.signal)) {
+      events.push(event);
+    }
+    return { events, warnings };
+  }
+
+  it("yields every event when many arrive in one chunk", async () => {
+    const chunk = Array.from({ length: 100 }, (_, i) => `event: e\ndata: {"i":${i}}\n\n`).join("");
+    const { events } = await collectOnce([chunk]);
+    expect(events).toHaveLength(100);
+    expect(events[99]).toEqual({ type: "e", data: { i: 99 } });
+  });
+
+  it("reassembles a line split over many chunks", async () => {
+    const line = 'data: {"id":"tx_many_chunks"}';
+    const chunks = ["event: transaction\n", ...line.split(""), "\n\n"];
+    const { events } = await collectOnce(chunks);
+    expect(events).toEqual([{ type: "transaction", data: { id: "tx_many_chunks" } }]);
+  });
+
+  it("treats a \\r\\n split across chunks as one terminator", async () => {
+    // Counted as two terminators, the "\n" would end the event before its data line and drop its type.
+    const { events } = await collectOnce(["event: split\r", '\ndata: {"ok":true}\r\n\r\n']);
+    expect(events).toEqual([{ type: "split", data: { ok: true } }]);
+  });
+
+  it("accepts bare \\r line terminators", async () => {
+    const { events } = await collectOnce(['event: cr\rdata: {"ok":true}\r\r']);
+    expect(events).toEqual([{ type: "cr", data: { ok: true } }]);
+  });
+
+  it("dispatches a line exactly at the length limit", async () => {
+    const value = "x".repeat(MAX_SSE_LINE_LENGTH - "data: ".length);
+    const { events, warnings } = await collectOnce([`data: ${value}\n\n`]);
+    expect(warnings).toEqual([]);
+    expect(events).toEqual([{ type: "message", data: value }]);
+  });
+
+  it("fails the stream and stops reading on an unterminated line past the limit", async () => {
+    // An endless `data:` line with no terminator: unbounded buffering would never return.
+    const controller = new AbortController();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {
+      queueMicrotask(() => controller.abort());
+    });
+    const encoder = new TextEncoder();
+    const piece = encoder.encode("x".repeat(64 * 1024));
+    let chunksSent = 0;
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encoder.encode("data: "));
+      },
+      pull(c) {
+        chunksSent++;
+        c.enqueue(piece);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(body, { status: 200 }));
+
+    const events: unknown[] = [];
+    for await (const event of openEventStream(URL, controller.signal)) {
+      events.push(event);
+    }
+
+    expect(events).toEqual([]);
+    expect(cancelled).toBe(true);
+    expect(chunksSent * 64 * 1024).toBeLessThan(MAX_SSE_LINE_LENGTH + 4 * 64 * 1024);
+    const calls = warn.mock.calls.flat().map(String);
+    expect(calls.some((arg) => arg.includes("SSE line exceeds the maximum length"))).toBe(true);
+  });
+
+  it("fails the stream when one event's data lines exceed the limit", async () => {
+    const line = `data: ${"y".repeat(64 * 1024)}\n`;
+    const lines = Math.ceil(MAX_SSE_EVENT_DATA_LENGTH / (64 * 1024)) + 1;
+    const { events, warnings } = await collectOnce([line.repeat(lines), "\n"]);
+    expect(events).toEqual([]);
+    expect(warnings.some((w) => w.includes("SSE event data exceeds the maximum length"))).toBe(true);
   });
 });

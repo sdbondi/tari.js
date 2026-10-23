@@ -13,8 +13,21 @@ export interface IndexerSseEvent {
 }
 
 /**
+ * Longest SSE line accepted, in UTF-16 code units, excluding its terminator.
+ * Indexer events are a few KiB of JSON, so this bounds the read buffer.
+ */
+export const MAX_SSE_LINE_LENGTH = 1024 * 1024;
+
+/** Most `data` accepted for one event, in UTF-16 code units, across all of its `data:` lines. */
+export const MAX_SSE_EVENT_DATA_LENGTH = 1024 * 1024;
+
+/**
  * Parses a partial SSE buffer into discrete events, returning any unparsed
  * remainder that should be carried forward to the next chunk.
+ *
+ * @deprecated Carrying the remainder forward and re-parsing it on every chunk
+ *   is unbounded in memory and quadratic in CPU. {@link openEventStream} uses an
+ *   incremental, size-bounded parser instead.
  */
 export function parseSseChunk(buffer: string): { events: IndexerSseEvent[]; remainder: string } {
   const events: IndexerSseEvent[] = [];
@@ -57,11 +70,115 @@ export function parseSseChunk(buffer: string): { events: IndexerSseEvent[]; rema
 }
 
 /**
+ * Incremental SSE parser. Each pushed chunk is scanned for line terminators
+ * once, and the unterminated tail is held as pieces until its terminator
+ * arrives. Throws once a line or one event's data exceeds its bound.
+ */
+class SseParser {
+  // Splits on \r\n, \r, or \n per the SSE spec
+  private readonly lineEnding = /\r\n|\r|\n/g;
+  // Pieces of the current line received so far, held apart so that each chunk is searched only once
+  private pending: string[] = [];
+  private pendingLength = 0;
+  // The last chunk ended in "\r", so a "\n" opening the next chunk completes that terminator
+  private afterCr = false;
+
+  private type = "message";
+  private dataLines: string[] = [];
+  private dataLength = 0;
+
+  constructor(private readonly url: string) {}
+
+  push(text: string): IndexerSseEvent[] {
+    const events: IndexerSseEvent[] = [];
+
+    if (this.afterCr && text.length > 0) {
+      if (text.startsWith("\n")) {
+        text = text.slice(1);
+      }
+      this.afterCr = false;
+    }
+
+    let lineStart = 0;
+    this.lineEnding.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = this.lineEnding.exec(text)) !== null) {
+      this.pending.push(text.slice(lineStart, match.index));
+      const line = this.pending.join("");
+      this.pending = [];
+      this.pendingLength = 0;
+      lineStart = this.lineEnding.lastIndex;
+      this.afterCr = match[0] === "\r" && lineStart === text.length;
+
+      const event = this.processLine(line);
+      if (event) events.push(event);
+    }
+
+    if (lineStart < text.length) {
+      this.pending.push(text.slice(lineStart));
+      this.pendingLength += text.length - lineStart;
+      if (this.pendingLength > MAX_SSE_LINE_LENGTH) {
+        throw new IndexerClientError(`SSE line exceeds the maximum length of ${MAX_SSE_LINE_LENGTH}`, {
+          url: this.url,
+        });
+      }
+    }
+
+    return events;
+  }
+
+  private processLine(line: string): IndexerSseEvent | undefined {
+    if (line.length > MAX_SSE_LINE_LENGTH) {
+      throw new IndexerClientError(`SSE line exceeds the maximum length of ${MAX_SSE_LINE_LENGTH}`, { url: this.url });
+    }
+
+    // Empty line = end of event
+    if (line === "") return this.dispatch();
+
+    if (line.startsWith("event:")) {
+      this.type = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      const value = line.slice(5).trim();
+      // Each line after the first adds a "\n" separator
+      this.dataLength += value.length + (this.dataLines.length > 0 ? 1 : 0);
+      if (this.dataLength > MAX_SSE_EVENT_DATA_LENGTH) {
+        throw new IndexerClientError(`SSE event data exceeds the maximum length of ${MAX_SSE_EVENT_DATA_LENGTH}`, {
+          url: this.url,
+        });
+      }
+      this.dataLines.push(value);
+    }
+    // ignore id:, retry: and comment lines
+    return undefined;
+  }
+
+  private dispatch(): IndexerSseEvent | undefined {
+    const { type, dataLines } = this;
+    this.type = "message";
+    this.dataLines = [];
+    this.dataLength = 0;
+
+    if (dataLines.length === 0) return undefined;
+
+    const rawData = dataLines.join("\n");
+    let data: unknown = rawData;
+    try {
+      data = JSON.parse(rawData);
+    } catch {
+      // leave as raw string if not valid JSON
+    }
+    return { type, data };
+  }
+}
+
+/**
  * Opens a persistent SSE connection to `url` using `fetch` and yields
  * parsed events as an async generator.
  *
  * Works in browsers (Fetch + ReadableStream) and Node.js ≥ 18.
- * Automatically reconnects after errors with a 5 s back-off.
+ * Automatically reconnects after errors with a 5 s back-off. A line longer than
+ * {@link MAX_SSE_LINE_LENGTH} or an event with more than
+ * {@link MAX_SSE_EVENT_DATA_LENGTH} of data is treated as a stream error.
  * Stops when `signal` is aborted.
  *
  * Mirrors the `EventStream` / `into_stream()` pattern from the Rust ootle-rs crate.
@@ -92,23 +209,20 @@ export async function* openEventStream(url: string, signal: AbortSignal): AsyncG
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
+      const parser = new SseParser(url);
 
       try {
         while (!signal.aborted) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const { events, remainder } = parseSseChunk(buffer);
-          buffer = remainder;
-
-          for (const event of events) {
+          for (const event of parser.push(decoder.decode(value, { stream: true }))) {
             yield event;
           }
         }
       } finally {
-        reader.cancel();
+        // Closes the connection, including after a parse error
+        reader.cancel().catch(() => {});
       }
     } catch (err) {
       if (signal.aborted) return;
