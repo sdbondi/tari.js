@@ -32,8 +32,12 @@ const PUBLIC_NONCE = generateKeypair().public_key;
  */
 const cryptoCtx = {
   crypto: {
-    stealthDhSecret: (network: number, ownerSecret: Uint8Array, publicNonce: Uint8Array): Promise<Uint8Array> =>
-      Promise.resolve(wasmStealthDhSecret(network, ownerSecret, publicNonce)),
+    stealthDhSecret: (
+      network: number,
+      ownerSecret: Uint8Array,
+      viewSecret: Uint8Array,
+      publicNonce: Uint8Array,
+    ): Promise<Uint8Array> => Promise.resolve(wasmStealthDhSecret(network, ownerSecret, viewSecret, publicNonce)),
   },
 } as Parameters<NonNullable<SecretKeyWallet["addStealthSignature"]>>[3];
 
@@ -68,6 +72,15 @@ describe("SecretKeyWallet.getViewSecret", () => {
 });
 
 describe("SecretKeyWallet.addStealthSignature", () => {
+  it("rejects when no view key is set, since the spend key derives from it", async () => {
+    const { owner_key } = generateOotleSecretKey();
+    const wallet = SecretKeyWallet.fromSecretKey(owner_key, TEST_NETWORK);
+
+    await expect(
+      wallet.addStealthSignature(makeUnsignedJson(), PUBLIC_NONCE, await wallet.getPublicKey(), cryptoCtx),
+    ).rejects.toThrow(/view-only secret/i);
+  });
+
   it("returns a well-formed TransactionSignature with all hex fields populated", async () => {
     const wallet = SecretKeyWallet.randomWithViewKey(TEST_NETWORK);
     const unsignedJson = makeUnsignedJson();
@@ -95,7 +108,7 @@ describe("SecretKeyWallet.addStealthSignature", () => {
   it("derives a deterministic one-time spend key for fixed inputs", async () => {
     // Fixed owner secret + view secret so the spend-key derivation is reproducible. The
     // one-time spend key (and thus the signature's `public_key`) is a pure function of
-    // (network, ownerSecret, publicNonce) via `stealthDhSecret`, so it reproduces exactly.
+    // (network, ownerSecret, viewSecret, publicNonce) via `stealthDhSecret`, so it reproduces exactly.
     const secrets = generateOotleSecretKey();
     const pub = ootlePublicKeyFromSecretKey(secrets.owner_key, secrets.view_key);
     const wallet = SecretKeyWallet.fromKeypair(secrets.owner_key, pub.owner_key, TEST_NETWORK, secrets.view_key);

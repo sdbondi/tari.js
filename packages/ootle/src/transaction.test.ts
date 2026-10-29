@@ -23,6 +23,7 @@ import { fromHexStr } from "./helpers";
 import { InvalidArgumentError, TransactionRejectedError, TransactionTimeoutError } from "./errors";
 import { RAW_JSON_FRAGMENT } from "./stealth/instruction";
 import { fakeProvider } from "./test/fake-provider";
+import { ENCODED_FEE_ONLY_EXECUTE_RESULT, ENCODED_REJECT_EXECUTE_RESULT } from "./test/fixtures";
 import { finalized, trivialUnsignedTx } from "./test/tx-builders";
 
 /** Build a `Finalized` indexer response for the given final_decision + finalize.result shape. */
@@ -48,7 +49,7 @@ describe("classifyOutcome", () => {
   });
 
   it("returns FeeIntentCommit when Abort coexists with an AcceptFeeRejectRest execution result", () => {
-    // The non-obvious branch at transaction.ts:127-133: Abort decision but the
+    // The non-obvious branch: Abort decision but the
     // finalize.result is AcceptFeeRejectRest, meaning fees were paid even though
     // the rest of the transaction was rejected.
     const result = classifyOutcome(
@@ -56,19 +57,19 @@ describe("classifyOutcome", () => {
         { Abort: "ExecutionFailure" },
         {
           abort_details: "user-side revert",
-          executionFinalizeResult: { AcceptFeeRejectRest: [{}, { ExecutionFailure: "x" }] },
+          executionResult: ENCODED_FEE_ONLY_EXECUTE_RESULT,
         },
       ),
     );
     expect(result).toEqual({ outcome: "FeeIntentCommit", reason: "user-side revert" });
   });
 
-  it("returns Reject (not a TypeError) when Abort coexists with a null finalize.result", () => {
-    // Off-spec indexer quirk mirroring the `final_decision === null` case: an Abort whose
-    // `execution_result.finalize.result` is null. `typeof null === "object"`, so without the
-    // null guard `"AcceptFeeRejectRest" in null` would throw a raw TypeError out of the SDK.
+  it("returns Reject when Abort carries an execution result that rejected everything", () => {
     const result = classifyOutcome(
-      finalized({ Abort: "ExecutionFailure" }, { abort_details: "boom", executionFinalizeResult: null }),
+      finalized(
+        { Abort: "ExecutionFailure" },
+        { abort_details: "boom", executionResult: ENCODED_REJECT_EXECUTE_RESULT },
+      ),
     );
     expect(result).toEqual({ outcome: "Reject", reason: "boom" });
   });
@@ -271,7 +272,7 @@ describe("watchTransaction", () => {
     const getTransactionResult = vi.fn(async () => ({
       result: finalized(
         { Abort: "ExecutionFailure" },
-        { abort_details: "boom", executionFinalizeResult: { Reject: { ExecutionFailure: "boom" } } },
+        { abort_details: "boom", executionResult: ENCODED_REJECT_EXECUTE_RESULT },
       ),
     }));
     const provider = fakeProvider({ getTransactionResult });
@@ -288,7 +289,7 @@ describe("watchTransaction", () => {
         { Abort: "ExecutionFailure" },
         {
           abort_details: "fee-only",
-          executionFinalizeResult: { AcceptFeeRejectRest: [{}, { ExecutionFailure: "x" }] },
+          executionResult: ENCODED_FEE_ONLY_EXECUTE_RESULT,
         },
       ),
     }));

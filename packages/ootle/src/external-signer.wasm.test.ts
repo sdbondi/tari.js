@@ -3,13 +3,14 @@
 
 import { generateKeypair, generateOotleAddress, schnorrSign } from "@tari-project/ootle-wasm";
 import { describe, expect, it } from "vitest";
+import { TransactionBuilder } from "./builder";
 import { SignerError } from "./errors";
 import { ExternalKeySigner } from "./external-signer";
 import type { ExternalSignFn } from "./external-signer";
 import { toHexStr } from "./helpers/hex";
 import { Network } from "./network";
 import { generateSealKeypair, sealTransaction, signTransaction } from "./transaction";
-import { TEST_NETWORK } from "./test/fixtures";
+import { TEST_MAX_EPOCH, TEST_NETWORK } from "./test/fixtures";
 import { trivialUnsignedTx } from "./test/tx-builders";
 
 /** Stands in for an HSM: signs with a key the SDK never sees and returns the raw `R ‖ s` bytes. */
@@ -38,6 +39,19 @@ describe("ExternalKeySigner (WASM)", () => {
     const signed = await signTransaction([signer], trivialUnsignedTx(), generateSealKeypair());
 
     expect(signed.transaction.V1.body.signatures.map((s) => s.public_key)).toEqual([toHexStr(publicKey)]);
+    expect(sealTransaction(signed).length).toBeGreaterThan(0);
+  });
+
+  it("authorizes a transaction that declares the external key as its main signer", async () => {
+    const { signer, publicKey } = externalSigner();
+    const unsignedTx = TransactionBuilder.new(TEST_NETWORK, TEST_MAX_EPOCH)
+      .withMainSigner({ Authorizer: toHexStr(publicKey) })
+      .dropAllProofsInWorkspace()
+      .buildUnsignedTransaction();
+
+    const signed = await signTransaction([signer], unsignedTx);
+
+    expect(signed.transaction.V1.body.transaction.main_signer).toEqual({ Authorizer: toHexStr(publicKey) });
     expect(sealTransaction(signed).length).toBeGreaterThan(0);
   });
 

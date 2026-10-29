@@ -2,9 +2,12 @@
 //   SPDX-License-Identifier: BSD-3-Clause
 
 import type { IndexerGetSubstateResponse, OutputBody, SubstateValue, Utxo } from "@tari-project/ootle-ts-bindings";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { toHexStr } from "../helpers/hex";
+import { testEncoded } from "../test/fake-encoded";
 import { commitmentOf, parseSubstateUtxo } from "./substate-parse";
+
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
 
 // 64 hex chars = 32 bytes.
 const RESOURCE_HEX = "a".repeat(64);
@@ -23,7 +26,7 @@ function outputBody(overrides: Partial<OutputBody> = {}): OutputBody {
 
 function utxoSubstate(utxo: Utxo): IndexerGetSubstateResponse {
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, state: { up: { substate } }, verified: true };
+  return { version: 0, state: { up: { substate: testEncoded(substate) } }, verified: true };
 }
 
 describe("commitmentOf", () => {
@@ -70,7 +73,7 @@ describe("parseSubstateUtxo", () => {
       throw new Error("expected a parsed UTXO");
     }
     expect(toHexStr(parsed.commitment)).toBe(COMMITMENT_HEX);
-    expect(parsed.body).toBe(body);
+    expect(parsed.body).toEqual(body);
     expect(parsed.body.public_nonce).toBe(body.public_nonce);
   });
 
@@ -90,7 +93,7 @@ describe("parseSubstateUtxo", () => {
   it("returns null for a non-Utxo substate arm (Component)", () => {
     const substate: IndexerGetSubstateResponse = {
       version: 0,
-      state: { up: { substate: { Component: {} as never } } },
+      state: { up: { substate: testEncoded({ Component: {} }) } },
       verified: true,
     };
     expect(parseSubstateUtxo(substate, UTXO_ID)).toBeNull();

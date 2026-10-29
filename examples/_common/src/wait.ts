@@ -2,6 +2,7 @@
 //   SPDX-License-Identifier: BSD-3-Clause
 
 import type { IndexerGetTransactionResultResponse, SubstateId } from "@tari-project/ootle-ts-bindings";
+import { decodeExecuteResult } from "@tari-project/ootle";
 import type { TransactionOutcome } from "@tari-project/ootle";
 import type { PendingTransaction } from "@tari-project/ootle-indexer";
 
@@ -45,14 +46,14 @@ export function firstNewSubstate(
   if (result === "Pending") return null;
   if (!("Finalized" in result)) return null;
 
-  const executionResult = result.Finalized.execution_result;
-  if (!executionResult) return null;
+  const encoded = result.Finalized.execution_result;
+  if (encoded === null) return null;
 
-  const txResult = executionResult.finalize.result;
+  const txResult = decodeExecuteResult(encoded).finalize.result;
   let diff;
-  if (typeof txResult === "object" && "Accept" in txResult) {
+  if ("Accept" in txResult) {
     diff = txResult.Accept;
-  } else if (typeof txResult === "object" && "AcceptFeeRejectRest" in txResult) {
+  } else if ("AcceptFeeRejectRest" in txResult) {
     diff = txResult.AcceptFeeRejectRest[0];
   } else {
     return null;

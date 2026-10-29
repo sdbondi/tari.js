@@ -49,3 +49,17 @@ export const TEST_ACCOUNT_ADDRESS = "component_" + "b".repeat(64);
 
 /** A syntactically-valid destination account address for stealth-transfer tests. */
 export const TEST_DESTINATION_ADDRESS = "account_dest_address";
+
+// Values as the indexer serves them: CBOR, base64. Encoded by `tari_engine_types`, so the
+// WASM decoders read them exactly as they read the indexer's.
+
+/** A `Vault` substate value: a public fungible vault holding 100 of resource `01…01`. */
+export const ENCODED_VAULT_SUBSTATE = "ggKBgoIAg9iDWCABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBARhkAAA=";
+
+/** An `ExecuteResult` whose `finalize.result` is `AcceptFeeRejectRest`: fees paid, the rest rejected. */
+export const ENCODED_FEE_ONLY_EXECUTE_RESULT =
+  "hYZYIAcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHgICCAYKDgICAggeAhQAAAIGgAACiZHNlY3MBZW5hbm9zAPYDBA==";
+
+/** An `ExecuteResult` whose `finalize.result` is `Reject`. */
+export const ENCODED_REJECT_EXECUTE_RESULT =
+  "hYZYIAcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHgICCAoGCB4CFAAAAgaAAAKJkc2VjcwFlbmFub3MA9gME";

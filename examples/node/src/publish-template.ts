@@ -12,7 +12,7 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { AccountInvokeBuilder, getVaultIdsForAccount, resolveMaxEpoch } from "@tari-project/ootle";
+import { AccountInvokeBuilder, getVaultIdsForAccount, resolveMaxEpoch, toHexStr } from "@tari-project/ootle";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
 import {
   NETWORK,
@@ -58,6 +58,8 @@ await runScript(async () => {
       ...senderVaults.map((v) => ({ substate_id: v, version: null })),
     ])
     .feeTransactionPayFromComponent(account, PUBLISH_FEE)
+    // The main signer is the template's author.
+    .withMainSigner({ Authorizer: toHexStr(await wallet.secret.getPublicKey()) })
     .publishTemplate(account, templateBinaryBase64)
     .build();
 

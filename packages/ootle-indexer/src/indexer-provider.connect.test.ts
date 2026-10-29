@@ -18,6 +18,7 @@ import { IndexerClientError, Network } from "@tari-project/ootle";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IndexerProvider } from "./indexer-provider";
 import { installStubClient, stubClient } from "./test/client-stub";
+import { ENCODED_VAULT_SUBSTATE } from "./test/fixtures";
 
 type StubClient = ReturnType<typeof stubClient>;
 
@@ -72,7 +73,7 @@ describe("IndexerProvider.getSubstate", () => {
   it("passes through to client.substatesGet with default version=null", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 3,
-      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
+      state: { up: { substate: ENCODED_VAULT_SUBSTATE } },
       verified: true,
     };
     const client = defaultStubClient({ substatesGet: vi.fn().mockResolvedValue(response) });
@@ -92,7 +93,7 @@ describe("IndexerProvider.getSubstate", () => {
   it("threads a specific version through to client.substatesGet", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 7,
-      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
+      state: { up: { substate: ENCODED_VAULT_SUBSTATE } },
       verified: true,
     };
     const client = defaultStubClient({ substatesGet: vi.fn().mockResolvedValue(response) });
@@ -117,7 +118,7 @@ describe("IndexerProvider.resolveInputs", () => {
   it("fills in the version for unversioned inputs from substatesGet", async () => {
     const substatesGet = vi.fn().mockResolvedValueOnce({
       version: 12,
-      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
+      state: { up: { substate: ENCODED_VAULT_SUBSTATE } },
     });
     const client = defaultStubClient({ substatesGet });
     installClient(client);

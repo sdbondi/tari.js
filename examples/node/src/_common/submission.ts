@@ -1,8 +1,12 @@
 //   Copyright 2024 The Tari Project
 //   SPDX-License-Identifier: BSD-3-Clause
 
-import type { UnsignedTransactionV1 } from "@tari-project/ootle-ts-bindings";
-import { sealTransaction, signTransaction } from "@tari-project/ootle";
+import type {
+  ExecuteResult,
+  IndexerSubmitTransactionDryRunResponse,
+  UnsignedTransactionV1,
+} from "@tari-project/ootle-ts-bindings";
+import { decodeExecuteResult, sealTransaction, signTransaction } from "@tari-project/ootle";
 import type { Signer, TransactionOutcome } from "@tari-project/ootle";
 import { IndexerProvider, PendingTransaction } from "@tari-project/ootle-indexer";
 import { indexerUrl } from "./env.js";
@@ -27,7 +31,7 @@ export async function signAndSubmit(
 }
 
 /**
- * Result of a {@link dryRun} call: the indexer's synchronous execute response.
+ * Result of a {@link dryRun} call: the indexer's synchronous execute response, decoded.
  *
  * Note that this is **not** the same shape as
  * `IndexerGetTransactionResultResponse`: the `/transactions/dry-run` endpoint
@@ -38,20 +42,7 @@ export async function signAndSubmit(
  */
 export interface DryRunResult {
   transaction_id: string;
-  result: {
-    finalize: {
-      transaction_hash: string;
-      result:
-        | { Accept: unknown }
-        | { AcceptFeeRejectRest: [unknown, unknown] }
-        | { Reject: Record<string, unknown> | string };
-      fee_receipt?: { total_fee_payment: number; total_fees_paid: number; total_fee_overcharge: number };
-      events?: unknown[];
-      logs?: unknown[];
-    };
-    execution_time?: { secs: number; nanos: number };
-    execute_epoch?: number;
-  };
+  result: ExecuteResult;
 }
 
 /**
@@ -62,19 +53,16 @@ export interface DryRunResult {
  */
 export function classifyDryRun(result: DryRunResult): TransactionOutcome {
   const inner = result.result.finalize.result;
-  if (typeof inner === "object" && inner !== null && "Accept" in inner) {
+  if ("Accept" in inner) {
     return { outcome: "Commit" };
   }
-  if (typeof inner === "object" && inner !== null && "AcceptFeeRejectRest" in inner) {
+  if ("AcceptFeeRejectRest" in inner) {
     return { outcome: "FeeIntentCommit", reason: JSON.stringify(inner.AcceptFeeRejectRest[1]) };
   }
-  if (typeof inner === "object" && inner !== null && "Reject" in inner) {
-    return {
-      outcome: "Reject",
-      reason: typeof inner.Reject === "string" ? inner.Reject : JSON.stringify(inner.Reject),
-    };
-  }
-  return { outcome: "Reject", reason: JSON.stringify(inner) };
+  return {
+    outcome: "Reject",
+    reason: typeof inner.Reject === "string" ? inner.Reject : JSON.stringify(inner.Reject),
+  };
 }
 
 /**
@@ -101,7 +89,8 @@ export async function dryRun(unsigned: UnsignedTransactionV1, signers: Signer[])
     const body = await response.text().catch(() => "<no body>");
     throw new Error(`dryRun: HTTP ${response.status} ${response.statusText}: ${body}`);
   }
-  return (await response.json()) as DryRunResult;
+  const { transaction_id, result } = (await response.json()) as IndexerSubmitTransactionDryRunResponse;
+  return { transaction_id, result: decodeExecuteResult(result) };
 }
 
 /**

@@ -11,6 +11,7 @@ import { Network } from "@tari-project/ootle";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IndexerProvider } from "./indexer-provider";
 import {
+  ENCODED_VAULT_SUBSTATE,
   TEST_COMMITMENT as COMMITMENT,
   TEST_EXPECTED_STEALTH_UTXO_ID as EXPECTED_ID,
   TEST_RESOURCE_ADDRESS as RESOURCE_ADDRESS,
@@ -47,7 +48,7 @@ describe("IndexerProvider.getStealthUtxo", () => {
   it("composes the right substate id from resource address + commitment", async () => {
     const response: IndexerGetSubstateResponse = {
       version: 3,
-      state: { up: { substate: { Utxo: { output: null, is_frozen: false } } } },
+      state: { up: { substate: ENCODED_VAULT_SUBSTATE } },
       verified: true,
     };
     const substatesGet = vi.fn().mockResolvedValue(response);

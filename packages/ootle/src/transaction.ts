@@ -19,6 +19,7 @@ import {
   sealTransaction as wasmSealTransaction,
 } from "@tari-project/ootle-wasm";
 import { assertByteLength, toHexStr } from "./helpers";
+import { decodeExecuteResult } from "./helpers/encoded";
 import { InvalidArgumentError, TransactionRejectedError, TransactionTimeoutError } from "./errors";
 import { RAW_JSON_FRAGMENT } from "./stealth/instruction";
 import type { RawJsonFragment } from "./stealth/instruction";
@@ -235,10 +236,8 @@ export function classifyOutcome(
   if (typeof decision === "object" && decision !== null && "Abort" in decision) {
     const reason = finalized.abort_details ?? JSON.stringify(decision.Abort);
     // OnlyFeeCommit: fees were paid (fee_decision === "Commit") but execution aborted.
-    const execResult = finalized.execution_result?.finalize?.result;
-    // `typeof null === "object"`, so guard against null before `in` (which throws on null).
-    // A null finalize.result is the same off-spec indexer quirk handled for `final_decision`.
-    if (execResult !== null && typeof execResult === "object" && "AcceptFeeRejectRest" in execResult) {
+    const execution = finalized.execution_result === null ? null : decodeExecuteResult(finalized.execution_result);
+    if (execution !== null && "AcceptFeeRejectRest" in execution.finalize.result) {
       return { outcome: "FeeIntentCommit", reason };
     }
     return { outcome: "Reject", reason };

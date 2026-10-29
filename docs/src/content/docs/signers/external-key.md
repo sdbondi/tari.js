@@ -31,3 +31,9 @@ await sendTransaction(provider, signer, unsignedTx);
 ```
 
 The signer authorizes the transaction. The SDK seals it with a throwaway key, as it does for every other signer, so the external key signs once per transaction.
+
+To act as the external key wherever the engine needs a single signer, such as publishing a template, declare it as the main signer when building the transaction. See [Main signer](/transactions/transaction-builder/#main-signer).
+
+```ts
+builder.withMainSigner({ Authorizer: toHexStr(publicKey) });
+```

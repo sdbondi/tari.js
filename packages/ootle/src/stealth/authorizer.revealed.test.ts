@@ -27,6 +27,8 @@ import { isStealthTransferInstruction, RAW_JSON_FRAGMENT } from "./instruction";
 import { StealthTransfer, type StealthTransferSpec } from "./transfer";
 import { WalletStealthAuthorizer, patchStealthStatement } from "./authorizer";
 
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
+
 // Mock the shared sign/seal pipeline the authorizer REUSES. `resolveTransaction` echoes the
 // tx; `signTransaction` records its signers and returns a stub; `sealTransaction` returns a
 // fixed envelope. This proves the authorizer routes through the same functions as the
@@ -173,7 +175,7 @@ describe("patchStealthStatement", () => {
       min_epoch: null,
       max_epoch: 100,
       dry_run: false,
-      is_seal_signer_authorized: false,
+      main_signer: "None",
       blobs: [],
       nonce: 0,
     };

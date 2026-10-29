@@ -65,5 +65,10 @@ export interface Signer {
  * `WasmStealthCrypto` and `FakeStealthCrypto` flow through as-is.
  */
 export interface SignerStealthCrypto {
-  stealthDhSecret(networkByte: number, ownerSecret: Uint8Array, publicNonce: Uint8Array): Promise<Uint8Array>;
+  stealthDhSecret(
+    networkByte: number,
+    ownerSecret: Uint8Array,
+    viewSecret: Uint8Array,
+    publicNonce: Uint8Array,
+  ): Promise<Uint8Array>;
 }

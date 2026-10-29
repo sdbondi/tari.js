@@ -21,6 +21,9 @@ catalogs:
     '@tari-project/ootle-wasm':
       specifier: ^0.47.0
       version: 0.47.0
+    '@tari-project/ootle-wasm-bor':
+      specifier: ^0.48.0-rc.0
+      version: 0.48.0-rc.0
     '@tari-project/wallet_jrpc_client':
       specifier: ^1.26.0
       version: 1.26.0
@@ -384,6 +387,9 @@ importers:
       '@tari-project/ootle-wasm':
         specifier: 'catalog:'
         version: 0.47.0
+      '@tari-project/ootle-wasm-bor':
+        specifier: 'catalog:'
+        version: 0.48.0-rc.0
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -2068,6 +2074,9 @@ packages:
 
   '@tari-project/ootle-ts-bindings@1.60.0':
     resolution: {integrity: sha512-FczJVEA2rmSCYg/Y8xqef0SiZXBILoMxyuw1FsII64DNnifdfT4A9wpnjdzoQcRU4Q3kL0edlhy1uGSK6XEEFA==}
+
+  '@tari-project/ootle-wasm-bor@0.48.0-rc.0':
+    resolution: {integrity: sha512-LtXSu5HBbeU7axpcZHekQOuOtGyksGjYoi+HSWmmrXh7HHLW4s/MFelbYv/AE87AcRvCYdSW0eGF/Y6M0qVjMQ==}
 
   '@tari-project/ootle-wasm@0.47.0':
     resolution: {integrity: sha512-prCDU+dkQNM0vyLND79Q/8xwdjKD0lAvIJkZWepv4gAjwS+wLvOyYyOk1ViNoAgoP0fw1OECQ6fNTctcTHfj0g==}
@@ -5522,6 +5531,8 @@ snapshots:
   '@tari-project/ootle-ts-bindings@1.60.0':
     dependencies:
       bech32: 2.0.0
+
+  '@tari-project/ootle-wasm-bor@0.48.0-rc.0': {}
 
   '@tari-project/ootle-wasm@0.47.0': {}
 

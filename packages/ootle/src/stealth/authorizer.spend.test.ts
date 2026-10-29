@@ -34,10 +34,13 @@ import { OotleWallet } from "../wallet";
 import { SignerError, WalletError } from "../errors";
 import { fromHexStr, toHexStr } from "../helpers/hex";
 import { FakeStealthCrypto, sealFakeOutput } from "../test/fake-crypto";
+import { testEncoded } from "../test/fake-encoded";
 import { createOutput, Mask } from "./primitives";
 import { isStealthTransferInstruction, RAW_JSON_FRAGMENT } from "./instruction";
 import { StealthTransfer, type StealthTransferSpec } from "./transfer";
 import { WalletStealthAuthorizer } from "./authorizer";
+
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
 
 // A fixed seal keypair so `generateSealKeypair` is deterministic and `signTransaction`
 // receives the same keypair the one-time authorizations were hashed with. The WASM result's
@@ -71,7 +74,7 @@ const COMMITMENT_A = fromHexStr("11".repeat(32));
 const COMMITMENT_B = fromHexStr("22".repeat(32));
 const NONCE_A = toHexStr(generateKeypair().public_key);
 const NONCE_B = toHexStr(generateKeypair().public_key);
-const VIEW_SECRET = fromHexStr("33".repeat(32));
+const VIEW_SECRET = generateKeypair().secret_key;
 
 const MASK_A = Mask.fromHex("44".repeat(32));
 const MASK_B = Mask.fromHex("55".repeat(32));
@@ -96,7 +99,7 @@ async function ownedUtxo(
     is_frozen: false,
   };
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, state: { up: { substate } }, verified: true };
+  return { version: 0, state: { up: { substate: testEncoded(substate) } }, verified: true };
 }
 
 /**
@@ -153,7 +156,7 @@ class TestSigner implements Signer {
     _ctx: { crypto: import("./crypto-provider").StealthCryptoProvider },
   ): Promise<TransactionSignature> {
     this.lastSealPublicKey = sealPublicKey;
-    const oneTimeSpendKey = wasmStealthDhSecret(this.network, this.secretKey, publicNonce);
+    const oneTimeSpendKey = wasmStealthDhSecret(this.network, this.secretKey, await this.getViewSecret(), publicNonce);
     const oneTimeSpendPublicKey = publicKeyFromSecretKey(oneTimeSpendKey);
     // Sign a deterministic 64-byte message that mixes in the seal pubkey (stand-in for the
     // tx hash), exercising real WASM Schnorr signing.
@@ -180,7 +183,7 @@ function stubProvider(overrides: Partial<Provider> = {}): Provider {
     getSubstate: vi.fn(async () => ({
       address: "",
       version: 0,
-      state: { up: { substate: { Component: { body: { state: {} } } } } },
+      state: { up: { substate: testEncoded({ Component: { body: { state: {} } } }) } },
       created_by_transaction: "",
     })),
     getStealthUtxo: vi.fn(),
@@ -399,7 +402,7 @@ describe("WalletStealthAuthorizer.prepare (stealth inputs)", () => {
       version: 0,
       state: {
         up: {
-          substate: {
+          substate: testEncoded({
             Utxo: {
               output: {
                 output: {
@@ -408,12 +411,12 @@ describe("WalletStealthAuthorizer.prepare (stealth inputs)", () => {
                   minimum_value_promise: 0,
                   viewable_balance: null,
                 },
-                auth: {} as never,
-                tag: 0 as never,
+                auth: {},
+                tag: 0,
               },
               is_frozen: false,
             },
-          },
+          }),
         },
       },
       verified: true,

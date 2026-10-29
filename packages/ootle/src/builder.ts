@@ -10,6 +10,7 @@ import type {
   InstructionArg,
   ResourceAddress,
   InputDeclaration,
+  MainSigner,
   SubstateRequirement,
   UnsignedTransactionV1,
   PublishedTemplateAddress,
@@ -244,7 +245,7 @@ export class TransactionBuilder {
       min_epoch: null,
       max_epoch: assertEpoch(maxEpoch, "maxEpoch"),
       dry_run: false,
-      is_seal_signer_authorized: false,
+      main_signer: "None",
       blobs: [],
       nonce: 0,
     };
@@ -475,6 +476,25 @@ export class TransactionBuilder {
    */
   public withMaxEpoch(maxEpoch: number): this {
     this.unsignedTransaction.max_epoch = assertEpoch(maxEpoch, "maxEpoch");
+    return this;
+  }
+
+  /**
+   * Declares the key the transaction acts as wherever the engine needs a single signer:
+   * `OwnerRule::OwnedBySigner`, `CallerContext::transaction_signer_public_key` and the author
+   * of a published template. Defaults to `"None"`, under which the engine aborts any of those
+   * with `NoMainSigner`.
+   *
+   * Every authorization signature and the seal cover this field, so declare it before
+   * signing. A declared `Authorizer` must also sign the transaction, or the network rejects it.
+   *
+   * @example
+   * ```ts
+   * builder.withMainSigner({ Authorizer: toHexStr(await signer.getPublicKey()) });
+   * ```
+   */
+  public withMainSigner(mainSigner: MainSigner): this {
+    this.unsignedTransaction.main_signer = mainSigner;
     return this;
   }
 

@@ -101,14 +101,14 @@ async function authenticateWebAuthn(
   const { registered } = await client.webauthnAlreadyRegistered({});
 
   if (registered) {
-    return webauthnLogin(client, appName, permissions);
+    return webauthnLogin(client, permissions);
   } else {
     return webauthnRegister(client, appName);
   }
 }
 
-async function webauthnLogin(client: WalletDaemonClient, appName: string, permissions: Permission[]): Promise<string> {
-  const startResponse = await client.webauthnAuthStart({ username: appName });
+async function webauthnLogin(client: WalletDaemonClient, permissions: Permission[]): Promise<string> {
+  const startResponse = await client.webauthnAuthStart({});
 
   if (!startResponse.challenge) {
     throw new SignerError("WebAuthn auth start: missing challenge");
@@ -199,6 +199,10 @@ async function webauthnRegister(client: WalletDaemonClient, appName: string): Pr
     session_id: startResponse.session_id,
     credential,
   });
+  // The wallet issues a session token for its first passkey only; this path runs when none is enrolled.
+  if (!token) {
+    throw new SignerError("WebAuthn registration: the wallet issued no session token");
+  }
 
   return token;
 }

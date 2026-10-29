@@ -159,11 +159,13 @@ export class SecretKeyWallet implements Signer {
    * Produces a one-time spend-key signature for a stealth input ({@link Signer.addStealthSignature}).
    *
    * Derives the one-time spend scalar (`c + k`) for the owned stealth UTXO via
-   * `stealthDhSecret(network, ownerSecret, publicNonce)`, then signs via the WASM
+   * `stealthDhSecret(network, ownerSecret, viewSecret, publicNonce)`, then signs via the WASM
    * `addTransactionSigner` (same path as {@link signTransaction}).
    *
    * The returned {@link TransactionSignature} carries the one-time spend public key (not the
    * wallet's owner public key) — it authorizes the specific stealth UTXO being spent.
+   *
+   * @throws {WalletError} when no view-only secret is set on this wallet.
    */
   public async addStealthSignature(
     unsignedJson: string,
@@ -171,7 +173,12 @@ export class SecretKeyWallet implements Signer {
     sealPublicKey: Uint8Array,
     ctx: AddStealthSignatureCtx,
   ): Promise<TransactionSignature> {
-    const oneTimeSpendKey = await ctx.crypto.stealthDhSecret(this.network, this.ownerSecretKey, publicNonce);
+    const oneTimeSpendKey = await ctx.crypto.stealthDhSecret(
+      this.network,
+      this.ownerSecretKey,
+      await this.getViewSecret(),
+      publicNonce,
+    );
     const signedJson = addTransactionSigner(unsignedJson, oneTimeSpendKey, sealPublicKey);
     const parsed = JSON.parse(signedJson) as { signatures: TransactionSignature[] };
     return parsed.signatures[parsed.signatures.length - 1];

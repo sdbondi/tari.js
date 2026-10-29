@@ -27,3 +27,13 @@ export const TEST_COMMITMENT = fromHexStr(TEST_COMMITMENT_HEX);
 
 /** The substate id `getStealthUtxo` is expected to compose from the constants above. */
 export const TEST_EXPECTED_STEALTH_UTXO_ID = `utxo_${TEST_RESOURCE_HEX}_${TEST_COMMITMENT_HEX}`;
+
+/**
+ * An `ExecuteResult` as the indexer serves it (CBOR, base64), encoded by `tari_engine_types`.
+ * Its `finalize.result` is `AcceptFeeRejectRest`: fees paid, the rest rejected.
+ */
+export const ENCODED_FEE_ONLY_EXECUTE_RESULT =
+  "hYZYIAcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHgICCAYKDgICAggeAhQAAAIGgAACiZHNlY3MBZW5hbm9zAPYDBA==";
+
+/** A `Vault` substate value as the indexer serves it (CBOR, base64), encoded by `tari_engine_types`. */
+export const ENCODED_VAULT_SUBSTATE = "ggKBgoIAg9iDWCABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBARhkAAA=";

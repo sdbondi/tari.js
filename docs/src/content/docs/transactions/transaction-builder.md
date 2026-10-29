@@ -33,6 +33,16 @@ const unsignedTx = TransactionBuilder.new(Network.Esmeralda, await resolveMaxEpo
   .buildUnsignedTransaction();
 ```
 
+## Main signer
+
+Some operations act as a single signer: creating a component owned by `OwnerRule::OwnedBySigner`, reading `CallerContext::transaction_signer_public_key` in a template, and publishing a template (the main signer is its author). The transaction declares which key that is with `withMainSigner`, before anyone signs:
+
+```ts
+builder.withMainSigner({ Authorizer: toHexStr(await signer.getPublicKey()) });
+```
+
+The declared key must also sign the transaction. The default is `"None"`, under which the engine aborts any of those operations with `NoMainSigner`.
+
 ## Method reference
 
 | Method                                                    | Description                          |
@@ -49,6 +59,7 @@ const unsignedTx = TransactionBuilder.new(Network.Esmeralda, await resolveMaxEpo
 | `addInput(req)` / `withInputs(reqs)`                      | Add substate inputs                  |
 | `withMinEpoch(n)` / `withMaxEpoch(n)`                     | Set epoch bounds                     |
 | `withNonce(n)`                                            | Distinguish identical transactions   |
+| `withMainSigner(mainSigner)`                              | Declare the main signer              |
 | `withInstructions(instructions)`                          | Append raw instructions              |
 | `withFeeInstructions(instructions)`                       | Append raw fee instructions          |
 | `dropAllProofsInWorkspace()`                              | Drop all proofs                      |

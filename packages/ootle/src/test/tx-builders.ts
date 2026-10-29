@@ -44,20 +44,14 @@ export function finalized(
   decision: FinalDecision,
   opts: {
     abort_details?: string | null;
-    executionFinalizeResult?: unknown;
+    /** The encoded `ExecuteResult` (see the `ENCODED_*_EXECUTE_RESULT` fixtures). */
+    executionResult?: string;
   } = {},
 ): IndexerTransactionFinalizedResult {
   return {
     Finalized: {
       final_decision: decision,
-      execution_result:
-        opts.executionFinalizeResult === undefined
-          ? null
-          : ({
-              finalize: { result: opts.executionFinalizeResult },
-            } as unknown as IndexerTransactionFinalizedResult extends { Finalized: { execution_result: infer E } }
-              ? E
-              : never),
+      execution_result: opts.executionResult ?? null,
       execution_time: { secs: 0, nanos: 0 },
       finalized_time: "1970-01-01T00:00:00Z",
       abort_details: opts.abort_details ?? null,

@@ -11,6 +11,7 @@ catalog:
   "@tari-project/indexer-client": ^1.11.0
   "@tari-project/ootle-ts-bindings": ^1.60.0
   "@tari-project/ootle-wasm": ^0.47.0
+  "@tari-project/ootle-wasm-bor": ^0.48.0-rc.0
   "@tari-project/wallet_jrpc_client": ^1.26.0
   "@types/node": ^25.5.0
   eslint: ^10.0.3

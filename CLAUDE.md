@@ -46,6 +46,7 @@ This is a pnpm monorepo. The SDK targets the Tari Ootle network (a UTXO + smart 
 External npm packages (not in this repo):
   @tari-project/ootle-ts-bindings    Rust FFI type definitions
   @tari-project/ootle-wasm           WASM crypto functions
+  @tari-project/ootle-wasm-bor       WASM decoders for the CBOR values the indexer serves
   @tari-project/indexer-client       Indexer REST API client
   @tari-project/wallet_jrpc_client   Wallet daemon JRPC client
 
@@ -79,6 +80,8 @@ ootle-indexer   ootle-secret-key-wallet   ootle-wallet-daemon-signer
 ### WASM crypto
 
 `@tari-project/ootle-wasm` is an external npm package that provides WASM-backed crypto functions: `generateKeypair`, `publicKeyFromSecretKey`, `schnorrSign`, `hashUnsignedTransaction`, `attachTransactionSignature`, `borEncodeTransaction`. These are called internally by `signTransaction` (in `ootle/src/transaction.ts`) and by the `SecretKeyWallet` / `EphemeralKeySigner` / `ExternalKeySigner` classes. Users do not need to manage a WASM module — the functions are imported directly.
+
+`@tari-project/ootle-wasm-bor` decodes the values the indexer serves in their CBOR encoding (base64): substate values, execution results, receipts, events, resources and UTXOs. `ootle/src/helpers/encoded.ts` wraps it; `upSubstateValue` and `classifyOutcome` decode through it. Tests whose fixtures are built in JS mock it with `ootle/src/test/fake-encoded.ts`.
 
 `@tari-project/ootle-ts-bindings` provides Rust FFI type definitions (e.g. `UnsignedTransactionV1`, `TransactionSignature`, `Instruction`) used throughout the SDK for type safety.
 

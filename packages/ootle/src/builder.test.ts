@@ -34,7 +34,7 @@ describe("TransactionBuilder.buildUnsignedTransaction", () => {
       min_epoch: null,
       max_epoch: TEST_MAX_EPOCH,
       dry_run: false,
-      is_seal_signer_authorized: false,
+      main_signer: "None",
       blobs: [],
       nonce: 0,
     });
@@ -343,6 +343,13 @@ describe("TransactionBuilder validity window and nonce", () => {
     expect(() => TransactionBuilder.new(TEST_NETWORK, TEST_MAX_EPOCH).withMinEpoch(-3)).toThrow(
       /non-negative integer epoch/,
     );
+  });
+
+  it("withMainSigner declares an authorizer as the main signer", () => {
+    const tx = TransactionBuilder.new(TEST_NETWORK, TEST_MAX_EPOCH)
+      .withMainSigner({ Authorizer: OWNER_PUBLIC_KEY })
+      .buildUnsignedTransaction();
+    expect(tx.main_signer).toEqual({ Authorizer: OWNER_PUBLIC_KEY });
   });
 
   it("defaults the nonce to 0", () => {

@@ -17,6 +17,9 @@ import { createOutput } from "./primitives";
 import { isStealthTransferInstruction, RAW_JSON_FRAGMENT } from "./instruction";
 import { StealthTransfer } from "./transfer";
 import { fromHexStr as fromHexStrLocal } from "../helpers/hex";
+import { testEncoded } from "../test/fake-encoded";
+
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
 
 const RESOURCE = "resource_" + "a".repeat(64);
 const ACCOUNT = "component_" + "b".repeat(64);
@@ -36,7 +39,7 @@ function stubProvider(overrides: Partial<Provider> = {}): Provider {
     getSubstate: vi.fn(async () => ({
       address: "",
       version: 0,
-      state: { up: { substate: { Component: { body: { state: {} } } } } },
+      state: { up: { substate: testEncoded({ Component: { body: { state: {} } } }) } },
       created_by_transaction: "",
     })),
     getStealthUtxo: vi.fn(),
@@ -247,7 +250,7 @@ describe("StealthTransfer.prepare", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        state: { up: { substate: { Component: { body: { state: componentState } } } } },
+        state: { up: { substate: testEncoded({ Component: { body: { state: componentState } } }) } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });

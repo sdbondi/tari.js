@@ -11,6 +11,9 @@ import { describe, expect, it, vi } from "vitest";
 import { Network } from "../network";
 import type { Provider } from "../provider";
 import { getVaultIdsForAccount, iterVaultIdsInState } from "./vault-walker";
+import { testEncoded } from "../test/fake-encoded";
+
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
 
 const VAULT_ID_TAG = 132;
 const NON_VAULT_TAG = 131;
@@ -112,7 +115,7 @@ describe("getVaultIdsForAccount", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        state: { up: { substate: { Component: { body: { state: componentState } } } } },
+        state: { up: { substate: testEncoded({ Component: { body: { state: componentState } } }) } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });
@@ -124,7 +127,7 @@ describe("getVaultIdsForAccount", () => {
       getSubstate: vi.fn(async () => ({
         address: ACCOUNT,
         version: 0,
-        state: { up: { substate: { Vault: { resource_container: {} } } } },
+        state: { up: { substate: testEncoded({ Vault: { resource_container: {} } }) } },
         created_by_transaction: "",
       })) as unknown as Provider["getSubstate"],
     });

@@ -92,7 +92,7 @@ export class EncryptedData {
  *
  * Maps from the WASM `DecryptedOutputResult { mask: Uint8Array, value: bigint,
  * memo_json: string | undefined }`. Per the verified 0.38 ABI, `memo` is the
- * **JSON-encoded `Memo` string** (`U256` / `Message` / `Bytes` / `PayRefAndBytes`),
+ * **JSON-encoded `Memo` string** (`U256` / `Message` / `Bytes` / `DestinationTagAndBytes` / `SenderAddress`),
  * not raw bytes — callers parse it if needed.
  */
 export interface DecryptedData {

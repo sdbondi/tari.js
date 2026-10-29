@@ -9,8 +9,11 @@ import type { IndexerGetSubstateResponse, OutputBody, SubstateValue, Utxo } from
 import { describe, expect, it, vi } from "vitest";
 import { fromHexStr, toHexStr } from "../helpers/hex";
 import { FakeStealthCrypto, sealFakeOutput } from "../test/fake-crypto";
+import { testEncoded } from "../test/fake-encoded";
 import { Mask } from "./primitives";
 import { decryptInputData, decryptOwnedUtxo } from "./wallet-helpers";
+
+vi.mock("@tari-project/ootle-wasm-bor", async () => (await import("../test/fake-encoded")).fakeOotleWasmBor);
 
 const RESOURCE_HEX = "a".repeat(64);
 const COMMITMENT_HEX = "0123456789abcdef".repeat(4); // 64 chars
@@ -42,7 +45,7 @@ async function ownedUtxoSubstate(crypto: FakeStealthCrypto): Promise<IndexerGetS
     is_frozen: false,
   };
   const substate: SubstateValue = { Utxo: utxo };
-  return { version: 0, state: { up: { substate } }, verified: true };
+  return { version: 0, state: { up: { substate: testEncoded(substate) } }, verified: true };
 }
 
 describe("decryptOwnedUtxo", () => {
@@ -89,7 +92,7 @@ describe("decryptOwnedUtxo", () => {
     const crypto = new FakeStealthCrypto();
     const substate: IndexerGetSubstateResponse = {
       version: 0,
-      state: { up: { substate: { Component: {} as never } } },
+      state: { up: { substate: testEncoded({ Component: {} }) } },
       verified: true,
     };
     await expect(decryptOwnedUtxo(crypto, VIEW_SECRET, substate, UTXO_ID)).resolves.toBeNull();

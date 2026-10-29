@@ -6,6 +6,7 @@ import type {
   ResourceAddress,
   PublishedTemplateAddress,
   InputDeclaration,
+  MainSigner,
   SubstateRequirement,
 } from "@tari-project/ootle-ts-bindings";
 import { TransactionBuilder } from "./builder";
@@ -39,6 +40,15 @@ export class AccountInvokeBuilder {
    */
   public withInputs(inputs: Array<SubstateRequirement | InputDeclaration>): this {
     this.builder.withInputs(inputs);
+    return this;
+  }
+
+  /**
+   * Declares the transaction's main signer. Publishing a template needs one: the main
+   * signer is the template's author. See {@link TransactionBuilder.withMainSigner}.
+   */
+  public withMainSigner(mainSigner: MainSigner): this {
+    this.builder.withMainSigner(mainSigner);
     return this;
   }
 

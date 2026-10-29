@@ -16,6 +16,7 @@ import type {
 import type { CommitOutcome } from "@tari-project/ootle";
 import { IndexerClientError, OperationCancelledError, TransactionTimeoutError } from "@tari-project/ootle";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ENCODED_FEE_ONLY_EXECUTE_RESULT } from "./test/fixtures";
 
 /**
  * A pushable async iterable backing the `openEventStream` mock. Each test gets
@@ -109,21 +110,15 @@ function finalizedResult(
     : never,
   opts: {
     abort_details?: string | null;
-    executionFinalizeResult?: unknown;
+    /** The encoded `ExecuteResult`. */
+    executionResult?: string;
   } = {},
 ): IndexerGetTransactionResultResponse {
   return {
     result: {
       Finalized: {
         final_decision: decision,
-        execution_result:
-          opts.executionFinalizeResult === undefined
-            ? null
-            : ({
-                finalize: { result: opts.executionFinalizeResult },
-              } as unknown as IndexerTransactionFinalizedResult extends { Finalized: { execution_result: infer E } }
-                ? E
-                : never),
+        execution_result: opts.executionResult ?? null,
         execution_time: { secs: 0, nanos: 0 },
         finalized_time: "1970-01-01T00:00:00Z",
         abort_details: opts.abort_details ?? null,
@@ -192,7 +187,7 @@ describe("TransactionWatcher SSE routing", () => {
         { Abort: "ExecutionFailure" },
         {
           abort_details: "user-side revert",
-          executionFinalizeResult: { AcceptFeeRejectRest: [{}, { ExecutionFailure: "x" }] },
+          executionResult: ENCODED_FEE_ONLY_EXECUTE_RESULT,
         },
       ),
     );
